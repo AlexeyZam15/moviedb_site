@@ -1,0 +1,20 @@
+﻿<!-- movies/templates/movies/analyze/tabs_navigation.html -->
+{% load static %}
+
+<ul class="nav nav-tabs mb-4" id="analyzeTabs" role="tablist">
+    {% for tab in description_tabs %}
+        <li class="nav-item" role="presentation">
+            <a class="nav-link {% if tab.key == active_tab %}active{% endif %}"
+               id="{{ tab.key }}-tab"
+               data-bs-toggle="tab"
+               href="#{{ tab.key }}"
+               role="tab"
+               aria-controls="{{ tab.key }}"
+               aria-selected="{% if tab.key == active_tab %}true{% else %}false{% endif %}">
+                <i class="bi bi-file-text me-2"></i>
+                {{ tab.label }}
+                <span class="badge bg-secondary ms-2">{{ tab.length }} chars</span>
+            </a>
+        </li>
+    {% endfor %}
+</ul>

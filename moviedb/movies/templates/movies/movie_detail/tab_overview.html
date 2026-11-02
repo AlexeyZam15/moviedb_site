@@ -1,0 +1,117 @@
+﻿<!-- movies/templates/movies/movie_detail/tab_overview.html -->
+
+<div class="row g-4">
+    <div class="col-lg-8">
+
+        {% if Movie.summary %}
+            <div class="compact-section">
+                <h3 class="text-info mb-3"><i class="bi bi-file-text me-2"></i>Overview</h3>
+                <div class="collapsible-text {% if Movie.summary|wordcount <= 100 %}expanded{% endif %}"
+                     id="summary-text">
+                    <p class="card-text text-light mb-0">{{ Movie.summary|safe }}</p>
+                </div>
+                {% if Movie.summary|wordcount > 100 %}
+                    <button class="toggle-text-btn mt-3" onclick="toggleText('summary')">
+                        <i class="bi bi-chevron-down me-1"></i>Read more
+                    </button>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        {% if Movie.tagline %}
+            <div class="compact-section mt-4">
+                <div class="text-muted fst-italic">
+                    <i class="bi bi-quote me-1"></i>{{ Movie.tagline }}
+                </div>
+            </div>
+        {% endif %}
+
+        {% if not Movie.summary and not Movie.tagline %}
+            <div class="compact-section">
+                <h3 class="text-info mb-3"><i class="bi bi-file-text me-2"></i>Overview</h3>
+                <p class="text-muted mb-0">No overview available for this movie.</p>
+            </div>
+        {% endif %}
+
+    </div>
+
+    <div class="col-lg-4">
+
+        <div class="compact-section">
+            <h3 class="text-info mb-3"><i class="bi bi-info-circle me-2"></i>Quick Info</h3>
+            <div class="d-flex flex-column gap-2">
+
+                {% if Movie.first_release_date %}
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Release Date</small>
+                        <span class="fw-bold text-light">{{ Movie.first_release_date|date:"M d, Y" }}</span>
+                    </div>
+                {% endif %}
+
+                {% if Movie.runtime %}
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Runtime</small>
+                        <span class="fw-bold text-light">{{ Movie.runtime }} min</span>
+                    </div>
+                {% endif %}
+
+                {% if Movie.rating %}
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Rating</small>
+                        <span class="fw-bold text-light">{{ Movie.rating|floatformat:1 }} / 100</span>
+                    </div>
+                {% endif %}
+
+                {% if Movie.rating_count %}
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Votes</small>
+                        <span class="fw-bold text-light">{{ Movie.rating_count }}</span>
+                    </div>
+                {% endif %}
+
+                {% if Movie.tmdb_id %}
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">TMDB ID</small>
+                        <a href="https://www.themoviedb.org/movie/{{ Movie.tmdb_id }}"
+                           target="_blank" rel="noopener noreferrer"
+                           class="text-info">{{ Movie.tmdb_id }}</a>
+                    </div>
+                {% endif %}
+
+            </div>
+        </div>
+
+        {% if Movie.homepage or Movie.imdb_id or Movie.tmdb_id %}
+            <div class="compact-section mt-4">
+                <h3 class="text-info mb-3"><i class="bi bi-link-45deg me-2"></i>Links</h3>
+                <div class="d-flex flex-column gap-2">
+
+                    {% if Movie.homepage %}
+                        <a href="{{ Movie.homepage }}" target="_blank" rel="noopener noreferrer"
+                           class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-globe me-1"></i>Official Website
+                        </a>
+                    {% endif %}
+
+                    {% if Movie.imdb_id %}
+                        <a href="https://www.imdb.com/title/{{ Movie.imdb_id }}/"
+                           target="_blank" rel="noopener noreferrer"
+                           class="btn btn-sm btn-outline-warning">
+                            <i class="bi bi-film me-1"></i>IMDb
+                        </a>
+                    {% endif %}
+
+                    {% if Movie.tmdb_id %}
+                        <a href="https://www.themoviedb.org/movie/{{ Movie.tmdb_id }}/"
+                           target="_blank" rel="noopener noreferrer"
+                           class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-box-arrow-up-right me-1"></i>TMDB
+                        </a>
+                    {% endif %}
+
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
+</div>

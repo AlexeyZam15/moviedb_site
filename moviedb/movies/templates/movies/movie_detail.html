@@ -1,0 +1,82 @@
+﻿<!-- movies/templates/movies/movie_detail.html -->
+
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block canonical %}
+    <link rel="canonical" href="https://gamespeek.dpdns.org{{ request.path }}">
+{% endblock %}
+
+{% block title %}{% with year=Movie.first_release_date|date:"Y"|cut:' ' %}
+    {{ Movie.name }}{% if year %} {{ year }}{% endif %} | Similar movies | GamesPeek
+{% endwith %}{% endblock %}
+
+{% block meta_tags %}
+    {{ block.super }}
+    <meta name="description"
+          content="{{ Movie.name|truncatechars:25 }} — find similar movies in our database.">
+    <meta name="keywords"
+          content="{{ Movie.name }}, similar movies to {{ Movie.name }}, Movie database">
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "Movie",
+            "name": "{{ Movie.name }}",
+            "url": "{{ request.build_absolute_uri }}",
+        {% if Movie.cover_url %}"image": "{{ Movie.cover_url }}",{% endif %}
+        "description": "{{ Movie.name }}.",
+            "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": "{{ Movie.rating|default:'0'|stringformat:'.1f' }}",
+                "bestRating": "100",
+                "worstRating": "0",
+                "ratingCount": "{{ Movie.rating_count|default:0 }}"
+            }{% if Movie.first_release_date %},
+            "datePublished": "{{ Movie.first_release_date|date:'Y-m-d' }}"{% endif %},
+            "genre": [{% for genre in Movie.genres.all %}"{{ genre.name }}"{% if not forloop.last %} {% endif%}{% endfor %}]
+        }
+    </script>
+    {{ breadcrumb_json_ld|safe }}
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'movies/css/game_detail.css' %}">
+    <link rel="stylesheet" href="{% static 'movies/css/game_detail/header.css' %}">
+    <link rel="stylesheet" href="{% static 'movies/css/game_detail/tabs.css' %}">
+    <link rel="stylesheet" href="{% static 'movies/css/game_detail/gallery.css' %}">
+    <link rel="stylesheet" href="{% static 'movies/css/game_list/mobile-carousel.css' %}">
+{% endblock %}
+
+{% block content %}
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb" style="background: transparent; padding: 0.5rem 0;">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}" style="color: var(--secondary-color);">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'game_list' %}" style="color: var(--secondary-color);">Video
+                Movie Database</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ Movie.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="container">
+        {% include 'movies/movie_detail/tabs_content.html' %}
+    </div>
+
+
+                    <div class="screenshot-counter">
+                        <span id="currentNum">1</span><span id="totalCount"> / 0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'movies/js/game_detail/header.js' %}"></script>
+    <script src="{% static 'movies/js/game_detail/game_detail.js' %}"></script>
+    <script src="{% static 'movies/js/game_detail/main.js' %}"></script>
+    <script src="{% static 'movies/js/game_list/similarity-display.js' %}"></script>
+    <script src="{% static 'movies/js/game_list/mobile-carousel.js' %}"></script>
+{% endblock %}
+

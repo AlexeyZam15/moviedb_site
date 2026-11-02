@@ -1,0 +1,37 @@
+﻿<!-- movies/templates/movies/movie_detail/tab_companies.html -->
+
+{% if Movie.production_companies.all %}
+    <div class="compact-section">
+        <h3 class="text-info mb-3"><i class="bi bi-building me-2"></i>Production Companies</h3>
+        <div class="row g-3">
+            {% for company in Movie.production_companies.all %}
+                <div class="col-md-4 col-sm-6">
+                    <div class="d-flex align-items-center gap-2 p-2 rounded"
+                         style="background: var(--surface-dark);">
+                        {% if company.logo_url %}
+                            <img src="{{ company.logo_url }}" alt="{{ company.name }}"
+                                 style="width: 40px; height: 40px; object-fit: contain;"
+                                 loading="lazy">
+                        {% else %}
+                            <div class="d-flex align-items-center justify-content-center rounded"
+                                 style="width: 40px; height: 40px; background: var(--border);">
+                                <i class="bi bi-building text-muted"></i>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <div class="fw-bold text-light small">{{ company.name }}</div>
+                            {% if company.origin_country %}
+                                <small class="text-muted">{{ company.origin_country }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% else %}
+    <div class="text-center py-4">
+        <i class="bi bi-building text-muted" style="font-size: 2rem;"></i>
+        <p class="text-muted mt-2 mb-0">No production companies information available</p>
+    </div>
+{% endif %}

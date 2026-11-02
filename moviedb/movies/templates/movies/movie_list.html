@@ -1,0 +1,151 @@
+﻿<!-- movies/templates/movies/movie_list.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% spaceless %}
+        {% if find_similar and source_game_obj %}
+            {% with year=source_game_obj.first_release_date|date:"Y"|cut:' ' %}
+                {{ source_game_obj.name }}{% if year %} {{ year }}{% endif %} - Similar movies | GamesPeek
+            {% endwith %}
+        {% else %}
+            Video Movie Database | GamesPeek
+        {% endif %}
+    {% endspaceless %}
+{% endblock %}
+
+{% block meta_tags %}
+    {% if find_similar and source_game_obj %}
+        <meta name="description"
+              content="Find movies like {{ source_game_obj.name }}. Discover similar movies based on genres, themes, and keywords. 45,000+ movies in database.">
+        <meta name="keywords"
+              content="movies like {{ source_game_obj.name }}, similar movies to {{ source_game_obj.name }}, {{ source_game_obj.name }} similar movies">
+    {% else %}
+        <meta name="description"
+              content="Browse 45,000+ movies. Filter by genre, theme, release year, and keywords. Free Movie discovery platform.">
+        <meta name="keywords"
+              content="video Movie database, browse movies, Movie database, Movie discovery, search movies">
+    {% endif %}
+
+    {% if find_similar and source_game_obj %}
+        <link rel="canonical"
+              href="https://gamespeek.dpdns.org/movies/?find_similar=1&source_game={{ source_game_obj.id }}">
+    {% else %}
+        <link rel="canonical" href="https://gamespeek.dpdns.org/movies/">
+    {% endif %}
+
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "name":
+        "{% if find_similar and source_game_obj %}movies Like {{ source_game_obj.name }}{% else %}Video Movie Database - Browse All movies{% endif %}",
+            "description": "{% if find_similar and source_game_obj %}Find similar movies to {{ source_game_obj.name }} in our database{% else %}Browse 45,000+ movies with advanced filtering{% endif %}",
+            "url": "https://gamespeek.dpdns.org{% url 'game_list' %}{% if find_similar and source_game_obj %}?find_similar=1&source_game={{ source_game_obj.id }}{% endif %}"
+        }
+    </script>
+
+    {{ breadcrumb_json_ld|safe }}
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'movies/css/game_list/filters.css' %}">
+    <link rel="stylesheet" href="{% static 'movies/css/game_list/date_filter.css' %}">
+    <link rel="stylesheet" href="{% static 'movies/css/game_list/keywords_pagination.css' %}">
+    <link rel="stylesheet" href="{% static 'movies/css/game_list/games_pagination.css' %}">
+    <link rel="stylesheet" href="{% static 'movies/css/game_list.css' %}">
+    <link rel="stylesheet" href="{% static 'movies/css/game_list/filters-skeleton.css' %}">
+    <link rel="stylesheet" href="{% static 'movies/css/game_list/filter-tabs.css' %}">
+    <link rel="stylesheet" href="{% static 'movies/css/game_list/mobile-carousel.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12">
+                {% if find_similar and source_game_obj %}
+                    <h1>🎬 movies Like {{ source_game_obj.name }} - Similar movies in Our Database</h1>
+                    <p class="text-muted">Discover movies similar to {{ source_game_obj.name }} based on genres, themes,
+                        and keywords from our video Movie database of 45,000+ titles</p>
+                {% else %}
+                    <h1>🎬 Video Movie Database - Browse 45,000+ movies</h1>
+                    <p class="text-muted">Use advanced filters to search our complete video Movie database and find your
+                        next favorite Movie by genre, theme, release date, and more</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% include 'movies/movie_list/_filters_form.html' %}
+
+        <div id="movies-results-container">
+            <div style="display: none;">
+                <input type="hidden" id="server-current-page" value="{{ current_page|default:1 }}">
+                <input type="hidden" id="server-total-pages" value="{{ total_pages|default:1 }}">
+                <input type="hidden" id="server-total-count" value="{{ total_count|default:0 }}">
+                <input type="hidden" id="server-items-per-page" value="{{ items_per_page|default:16 }}">
+
+                {% if source_game_obj and source_game_obj.id %}
+                    <input type="hidden" id="server-source-Movie-id" value="{{ source_game_obj.id }}">
+                    <input type="hidden" id="server-source-Movie-name" value="{{ source_game_obj.name }}">
+                {% endif %}
+
+                {% if find_similar %}
+                    <input type="hidden" id="server-find-similar" value="1">
+                {% endif %}
+            </div>
+
+            <div class="movies-pagination-spinner movies-pagination-top" style="display: none;">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-muted mt-2 mb-0">Loading movies...</p>
+                </div>
+            </div>
+
+            <div class="movies-container movies-loaded">
+                <div class="row" id="movies-grid-row">
+                    {% if movies_with_cards %}
+                        {% for movie_item in movies_with_cards %}
+                            {% if movie_item.card %}
+                                {{ movie_item.card.rendered_card|safe }}
+                            {% else %}
+                                {% include 'movies/partials/_movie_card.html' with Movie=movie_item.Movie show_similarity=show_similarity source_game=source_movie current_page=current_page game_index=forloop.counter0 %}
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <div class="col-12">
+                            <div class="text-center py-5">
+                                <h5>No movies found</h5>
+                                <p class="text-muted">Try changing your search criteria or reset filters</p>
+                                <a href="{% url 'game_list' %}" class="btn btn-primary">Show All movies</a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="movies-pagination-spinner movies-pagination-bottom" style="display: none;">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-muted mt-2 mb-0">Loading movies...</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'movies/js/game_list/game_list_ui.js' %}?v={% now 'U' %}"></script>
+    <script src="{% static 'movies/js/game_list/game_list_filters.js' %}?v={% now 'U' %}"></script>
+    <script src="{% static 'movies/js/game_list.js' %}?v={% now 'U' %}"></script>
+    <script src="{% static 'movies/js/game_list/ajax-pagination.js' %}?v={% now 'U' %}"></script>
+    <script src="{% static 'movies/js/game_list/keywords-pagination.js' %}?v={% now 'U' %}"></script>
+    <script src="{% static 'movies/js/game_list/mobile-carousel.js' %}?v={% now 'U' %}"></script>
+    <script src="{% static 'movies/js/game_list/similarity-compare.js' %}?v={% now 'U' %}"></script>
+    <script src="{% static 'movies/js/game_list/similarity-display.js' %}?v={% now 'U' %}"></script>
+{% endblock %}

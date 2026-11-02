@@ -1,0 +1,40 @@
+﻿# movies/management/commands/analyzer/__init__.py
+"""
+Модуль для команды анализа игр - УПРОЩЕННАЯ ВЕРСИЯ для совместимости со старым кодом
+
+Основные компоненты:
+    analyzer_command - основной класс команды с поддержкой нового API
+    progress_bar - прогресс-бар для отображения хода выполнения
+    text_preparer - подготовщик текста для анализа
+    state_manager - менеджер состояния обработки
+    batch_updater - батч-апдейтер для обновления БД
+    output_formatter - форматировщик вывода
+    analysis_cache - кэш результатов анализа на диске
+
+Примечание:
+    - PatternManager теперь находится в movies/analyze/pattern_manager.py
+    - Основная логика анализа в movies/analyze/
+    - Этот модуль только для обратной совместимости со старой структурой команд
+"""
+
+from .progress_bar import ProgressBar
+from .analyzer_command import AnalyzerCommand
+from .text_preparer import TextPreparer
+from .state_manager import StateManager
+from .batch_updater import BatchUpdater
+from .output_formatter import OutputFormatter
+from .analysis_cache import AnalysisCache
+
+__all__ = [
+    'ProgressBar',
+    'AnalyzerCommand',
+    'TextPreparer',
+    'StateManager',
+    'BatchUpdater',
+    'OutputFormatter',
+    'AnalysisCache',
+]
+
+__version__ = '2.1.0'
+__author__ = 'Movie Analysis Team'
+__description__ = 'Команда анализа игр с поддержкой нового API анализа и кэширования'

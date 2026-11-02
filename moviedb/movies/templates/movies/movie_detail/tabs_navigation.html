@@ -1,0 +1,42 @@
+﻿<!-- movies/templates/movies/movie_detail/tabs_navigation.html -->
+
+{% load movie_tags %}
+
+<ul class="nav nav-tabs mb-4" id="movieTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <a class="nav-link active" id="overview-tab" data-bs-toggle="tab"
+           href="#overview" role="tab" aria-controls="overview" aria-selected="true">
+            <i class="bi bi-info-circle me-2"></i>Overview
+        </a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link" id="details-tab" data-bs-toggle="tab"
+           href="#details" role="tab" aria-controls="details" aria-selected="false">
+            <i class="bi bi-list-check me-2"></i>Details
+        </a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link" id="companies-tab" data-bs-toggle="tab"
+           href="#companies" role="tab" aria-controls="companies" aria-selected="false">
+            <i class="bi bi-building me-2"></i>Companies
+        </a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link" id="keywords-tab" data-bs-toggle="tab"
+           href="#keywords" role="tab" aria-controls="keywords" aria-selected="false">
+            <i class="bi bi-tags me-2"></i>Keywords
+        </a>
+    </li>
+
+    <li class="nav-item" role="presentation">
+        <a class="nav-link" id="screenshots-tab" data-bs-toggle="tab"
+           href="#screenshots" role="tab" aria-controls="screenshots" aria-selected="false">
+            <i class="bi bi-image me-2"></i>Screenshots
+            {% with screenshots_count=Movie.screenshots.count %}
+                {% if screenshots_count %}
+                    <span class="badge bg-secondary ms-1">{{ screenshots_count }}</span>
+                {% endif %}
+            {% endwith %}
+        </a>
+    </li>
+</ul>

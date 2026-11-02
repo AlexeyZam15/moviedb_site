@@ -1,0 +1,124 @@
+﻿<!-- movies/templates/movies/movie_detail/header.html -->
+
+{% load movie_tags color_tags %}
+
+<div class="Movie-header-card card border-0">
+    <div class="card-body p-0">
+        <div class="row g-0">
+
+            <!-- Обложка с наложенными элементами -->
+            <div class="col-md-5 col-lg-4 col-xl-4">
+                <div class="position-relative h-100" style="min-height: 400px;">
+                    <div class="Movie-cover-container w-100 h-100">
+                        {% if Movie.cover_url %}
+                            <div class="Movie-cover-wrapper w-100 h-100">
+                                <img src="{{ Movie.cover_url }}"
+                                     class="Movie-cover-main w-100 h-100"
+                                     alt="{{ Movie.name }}"
+                                     loading="lazy"
+                                     onload="this.style.opacity='1'"
+                                     style="opacity: 0; transition: opacity 0.5s ease; object-fit: cover; object-position: center 20%;">
+                            </div>
+                        {% else %}
+                            <div class="no-cover-placeholder w-100 h-100 d-flex align-items-center justify-content-center">
+                                <span class="text-muted fs-3">No Cover</span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Рейтинг как SVG изображение (верхний левый угол) -->
+                    <div class="position-absolute top-0 start-0 rating-overlay">
+                        {% if Movie.rating %}
+                            {% rating_star_svg Movie.rating 80 %}
+                        {% else %}
+                            <div class="no-rating-container"
+                                 data-bs-toggle="tooltip"
+                                 data-bs-placement="right"
+                                 data-bs-title="No Rating">
+                                <svg viewBox="0 0 80 80">
+                                    <path d="M40,10 L48.6,30.2 L70,30.2 L52.7,42.8 L61.3,63 L40,50.4 L18.7,63 L27.3,42.8 L10,30.2 L31.4,30.2 Z"/>
+                                    <text x="40" y="45" text-anchor="middle">N/A</text>
+                                </svg>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Основная информация -->
+            <div class="col-md-7 col-lg-8 col-xl-8">
+                <div class="h-100 p-4">
+
+                    <!-- Дата релиза -->
+                    <div class="mb-4">
+                        {% if Movie.first_release_date %}
+                            <span class="text-light fs-5">
+                                <i class="bi bi-calendar-event me-2"></i>Released: {{ Movie.first_release_date|date:"M j, Y" }}
+                            </span>
+                        {% else %}
+                            <span class="text-light fs-5">
+                                <i class="bi bi-calendar-event me-2"></i>Release Date Unknown
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Серия фильма -->
+                    {% if Movie.is_part_of_series and Movie.main_series %}
+                        <div class="mb-4">
+                            <h5 class="text-light mb-2">
+                                <i class="bi bi-collection-play me-2 text-primary"></i>Series:
+                            </h5>
+                            <div class="d-flex align-items-center">
+                                <span class="text-light fs-5">
+                                    {{ Movie.main_series.name }}
+                                    {% if Movie.series_order %}
+                                        <span class="ms-2 badge bg-info fs-6">Part {{ Movie.series_order }}</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Жанры -->
+                    {% if Movie.genres.all %}
+                        <div class="mb-4">
+                            <h5 class="text-light mb-2">
+                                <i class="bi bi-grid me-2"></i>Genres:
+                            </h5>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for genre in Movie.genres.all %}
+                                    <span class="badge bg-success px-3 py-2 fs-6">{{ genre.name }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Темы -->
+                    {% if Movie.themes.all %}
+                        <div class="mb-4">
+                            <h5 class="text-light mb-2">
+                                <i class="bi bi-palette me-2"></i>Themes:
+                            </h5>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for theme in Movie.themes.all %}
+                                    <span class="badge bg-danger px-3 py-2 fs-6">{{ theme.name }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Кнопки действий -->
+                    <div class="d-flex flex-wrap gap-3 mt-auto pt-4">
+                        <a href="{% get_find_similar_url Movie %}"
+                           class="btn btn-primary-gradient px-4 py-2 fw-bold">
+                            <i class="bi bi-search-heart me-2"></i>Find Similar
+                        </a>
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

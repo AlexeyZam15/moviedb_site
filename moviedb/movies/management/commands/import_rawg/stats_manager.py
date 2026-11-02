@@ -1,0 +1,80 @@
+﻿# FILE: stats_manager.py
+import time
+from movies.models import Movie
+from django.db.models import Q
+
+
+class StatsManager:
+    """Класс для управления и отображения статистики"""
+
+    def __init__(self, stdout, style):
+        self.stdout = stdout
+        self.style = style
+
+    def show_rawg_stats(self):
+        """Показывает статистику по играм"""
+        try:
+            total_movies = Movie.objects.count()
+            movies_with_rawg = Movie.objects.filter(
+                ~Q(rawg_description__isnull=True) &
+                ~Q(rawg_description__exact='')
+            ).count()
+
+            movies_filtered = Movie.objects.filter(
+                game_type__in=[0, 1, 2, 4, 5, 8, 9, 10, 11]
+            ).count()
+
+            movies_filtered_with_rawg = Movie.objects.filter(
+                Q(game_type__in=[0, 1, 2, 4, 5, 8, 9, 10, 11]) &
+                ~Q(rawg_description__isnull=True) &
+                ~Q(rawg_description__exact='')
+            ).count()
+
+            total_percentage = (movies_with_rawg / total_movies * 100) if total_movies > 0 else 0
+            filtered_percentage = (movies_filtered_with_rawg / movies_filtered * 100) if movies_filtered > 0 else 0
+
+            self.stdout.write('\n' + '📊' * 15)
+            self.stdout.write('📈 СТАТИСТИКА БАЗЫ ДАННЫХ:')
+            self.stdout.write(f'   Всего игр в БД: {total_movies:,}')
+            self.stdout.write(f'   ✅ С RAWG описанием: {movies_with_rawg:,} ({total_percentage:.1f}%)')
+
+            self.stdout.write(f'\n   🎮 Игр с типами 0,1,2,4,5,8,9,10,11: {movies_filtered:,}')
+            self.stdout.write(f'   ✅ С RAWG описанием: {movies_filtered_with_rawg:,} ({filtered_percentage:.1f}%)')
+
+            if movies_filtered > 0:
+                bar_length = 30
+                filled = int(bar_length * filtered_percentage / 100)
+                bar = "[" + "█" * filled + "░" * (bar_length - filled) + "]"
+                self.stdout.write(f'\n   {bar} {filtered_percentage:.1f}% заполнено (основные типы)')
+
+        except Exception as e:
+            self.stdout.write(f'   ⚠️ Ошибка получения статистики БД: {e}')
+
+    def show_api_statistics(self, rawg_client):
+        """Показывает детальную статистику использования API"""
+        if not rawg_client:
+            self.stdout.write('\n⚠️  RAWG клиент не инициализирован')
+            return
+
+        client_stats = rawg_client.get_stats()
+
+        self.stdout.write('\n' + '📈' * 15)
+        self.stdout.write('📊 ДЕТАЛЬНАЯ СТАТИСТИКА API:')
+
+        total_requests = client_stats['total_requests']
+        cache_hits = client_stats['cache_hits']
+        cache_misses = client_stats['cache_misses']
+        total_cache_checks = cache_hits + cache_misses
+
+        if total_cache_checks > 0:
+            cache_efficiency = (cache_hits / total_cache_checks) * 100
+        else:
+            cache_efficiency = 0
+
+        self.stdout.write(f'   🔍 Поисковых запросов: {client_stats["search_requests"]}')
+        self.stdout.write(f'   📄 Запросов деталей: {client_stats["detail_requests"]}')
+        self.stdout.write(f'   🎯 Всего запросов к API: {total_requests}')
+        self.stdout.write(f'   💾 Попаданий в кэш: {cache_hits}')
+        self.stdout.write(f'   ❌ Промахов кэша: {cache_misses}')
+        self.stdout.write(f'   ⚡ Эффективность кэша: {cache_efficiency:.1f}%')
+        self.stdout.write(f'   🚫 Rate limited: {client_stats["rate_limited"]}')

@@ -1,0 +1,147 @@
+﻿<!-- movies/templates/movies/movie_comparison/_comparison_movie_card.html -->
+
+{% load static %}
+{% load color_tags %}
+
+<div class="Movie-comparison-card position-relative">
+    {% if Movie %}
+        <a href="{% url 'game_detail' Movie.pk %}" class="Movie-link text-decoration-none">
+            {% if Movie.cover_url %}
+                <img src="{{ Movie.cover_url }}" class="card-img-top comparison-cover"
+                     alt="{{ Movie.name }}">
+            {% else %}
+                <div class="comparison-cover bg-light d-flex align-items-center justify-content-center position-relative no-cover-placeholder">
+                    <span class="text-muted">No Cover</span>
+                </div>
+            {% endif %}
+        </a>
+        <div class="card-body p-0 mt-3">
+            <a href="{% url 'game_detail' Movie.pk %}" class="text-decoration-none">
+                <h3 class="Movie-title text-light mb-3">{{ Movie.name }}</h3>
+            </a>
+
+            {% if similarity_score is not None %}
+                <div class="total-similarity mb-3">
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="similarity-value text-center">
+                            <span class="text-warning fw-bold fs-3">{{ similarity_score|floatformat:1 }}%</span>
+                            <div class="text-muted small mt-1">Overall Similarity</div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if Movie.rating %}
+                <div class="Movie-rating mb-3">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <span class="text-warning fw-bold fs-5">⭐ {{ Movie.rating|floatformat:1 }}</span>
+                        <small class="text-muted ms-2">({{ Movie.rating_count }})</small>
+                    </div>
+                </div>
+            {% else %}
+                <div class="Movie-rating mb-3">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <span class="text-muted fw-bold fs-5">⭐ N/A</span>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if Movie.genres.all %}
+                <div class="Movie-genres mb-3">
+                    <div class="d-flex flex-wrap gap-1 justify-content-center">
+                        {% for genre in Movie.genres.all %}
+                            <span class="badge bg-primary px-2 py-1">{{ genre.name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if Movie.production_companies.all %}
+                <div class="Movie-developers mb-3">
+                    <div class="d-flex flex-wrap gap-1 justify-content-center">
+                        {% for company in Movie.production_companies.all|slice:":3" %}
+                            <span class="badge bg-info px-2 py-1">{{ company.name }}</span>
+                        {% endfor %}
+                        {% if Movie.production_companies.all|length > 3 %}
+                            <span class="badge bg-secondary px-2 py-1">+{{ Movie.production_companies.all|length|add:"-3" }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if Movie.first_release_date %}
+                <div class="release-date">
+                    <small class="text-muted">
+                        <i class="bi bi-calendar3 me-1"></i>
+                        {{ Movie.first_release_date|date:"M j, Y" }}
+                    </small>
+                </div>
+            {% endif %}
+        </div>
+
+    {% else %}
+        <div class="criteria-header mb-4 position-relative">
+            <div class="d-flex flex-column align-items-center">
+                <i class="bi bi-search text-warning" style="font-size: 4rem;"></i>
+                <h3 class="Movie-title mt-3 text-light">Search Criteria</h3>
+            </div>
+        </div>
+        <div class="card-body p-0">
+
+            {% if criteria_genres %}
+                <div class="Movie-genres mb-3">
+                    <div class="d-flex flex-wrap gap-1 justify-content-center">
+                        {% for genre in criteria_genres %}
+                            <span class="badge bg-primary px-2 py-1">{{ genre.name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if criteria_keywords %}
+                <div class="Movie-keywords mb-3">
+                    <div class="keywords-container">
+                        <div class="keywords-collapsible" id="criteria-keywords">
+                            {% for keyword in criteria_keywords|slice:":6" %}
+                                <span class="badge bg-success px-2 py-1">{{ keyword.name }}</span>
+                            {% endfor %}
+                            {% if criteria_keywords|length > 6 %}
+                                <div class="keywords-hidden" id="hidden-keywords" style="display: none;">
+                                    {% for keyword in criteria_keywords|slice:"6:" %}
+                                        <span class="badge bg-success px-2 py-1">{{ keyword.name }}</span>
+                                    {% endfor %}
+                                </div>
+                                <button type="button" class="btn btn-link btn-sm p-0 mt-1 text-decoration-none"
+                                        onclick="toggleKeywords()">
+                                    <span id="keywords-toggle-text" class="text-warning">Show more</span>
+                                    <i class="bi bi-chevron-down text-warning" id="keywords-toggle-icon"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if criteria_themes %}
+                <div class="Movie-themes mb-3">
+                    <div class="d-flex flex-wrap gap-1 justify-content-center">
+                        {% for theme in criteria_themes %}
+                            <span class="badge bg-warning px-2 py-1">{{ theme.name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if criteria_production_companies %}
+                <div class="Movie-developers mb-3">
+                    <div class="d-flex flex-wrap gap-1 justify-content-center">
+                        {% for company in criteria_production_companies %}
+                            <span class="badge bg-info px-2 py-1">{{ company.name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+        </div>
+    {% endif %}
+</div>
