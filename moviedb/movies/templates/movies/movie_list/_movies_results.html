@@ -1,0 +1,66 @@
+﻿<!-- movies/templates/movies/movie_list/_movies_results.html -->
+{% load static %}
+
+<div class="row">
+    <div class="col-12">
+        <div style="display: none;">
+            <input type="hidden" id="server-current-page" value="{{ current_page }}">
+            <input type="hidden" id="server-total-pages" value="{{ total_pages }}">
+            <input type="hidden" id="server-total-count" value="{{ total_count }}">
+            <input type="hidden" id="server-start-index" value="{{ start_index }}">
+            <input type="hidden" id="server-end-index" value="{{ end_index }}">
+            <input type="hidden" id="server-items-per-page" value="{{ items_per_page|default:16 }}">
+            <input type="hidden" id="server-rendered" value="true">
+            {% if source_game and source_game.id %}
+                <input type="hidden" id="server-source-Movie-id" value="{{ source_game.id }}">
+                <input type="hidden" id="server-source-Movie-name" value="{{ source_game.name }}">
+            {% endif %}
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            {% if show_similarity %}
+                <h5>Found <span id="movies-total">{{ total_count }}</span> similar movies
+                    {% if source_game %}
+                        to <strong>{{ source_game.name }}</strong>
+                    {% endif %}
+                </h5>
+            {% else %}
+                <h5>Found <span id="movies-total">{{ total_count }}</span> movies</h5>
+            {% endif %}
+        </div>
+
+        {% include 'movies/movie_list/_pagination.html' with position='movies-pagination-top' %}
+
+        <div class="movies-container">
+            <div class="loading-text" style="display: none;">Loading movies...</div>
+
+            {% if show_similarity and games_with_similarity %}
+                {% include 'movies/movie_list/_movies_grid.html' with movies=games_with_similarity show_similarity=show_similarity source_game=source_game current_page=current_page %}
+            {% elif movies %}
+                {% include 'movies/movie_list/_movies_grid.html' with movies=movies current_page=current_page %}
+            {% else %}
+                <div class="row" id="movies-grid-row">
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <h5>No movies found</h5>
+                            <p class="text-muted">Try changing your search criteria or reset filters</p>
+                            <a href="{% url 'game_list' %}" class="btn btn-primary">Show All movies</a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        {% include 'movies/movie_list/_pagination.html' with position='movies-pagination-bottom' %}
+
+        <div id="no-movies-template" style="display: none;">
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <h5>No movies found</h5>
+                    <p class="text-muted">Try changing your search criteria or reset filters</p>
+                    <a href="{% url 'game_list' %}" class="btn btn-primary">Show All movies</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

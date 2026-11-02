@@ -1,0 +1,99 @@
+﻿<!-- movies/templates/movies/analyze/sidebar.html -->
+{% load static %}
+
+<div class="sidebar-card">
+    <div class="sidebar-card-header">
+        <i class="bi bi-palette me-2"></i>Highlight Legend
+    </div>
+    <div class="sidebar-card-body">
+        <div class="legend-grid">
+            <div class="legend-item">
+                <div class="legend-color genre"></div>
+                <div class="legend-text">Genres</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color theme"></div>
+                <div class="legend-text">Themes</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color keyword"></div>
+                <div class="legend-text">Keywords</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if found_items %}
+    <div class="sidebar-card">
+        <div class="sidebar-card-header bg-success text-white">
+            <i class="bi bi-check-circle me-2"></i>Found Elements
+            <span class="badge bg-light text-success ms-2">
+                {{ found_items.total_found|default:0 }} total
+            </span>
+        </div>
+        <div class="sidebar-card-body">
+            {% if found_items.genres %}
+                <div class="found-items-category" data-category="genres">
+                    <h6>Genres ({{ found_items.genres|length }})</h6>
+                    <div class="found-items-list">
+                        {% for item in found_items.genres %}
+                            <span class="badge {% if item.is_new %}bg-success{% else %}bg-secondary{% endif %}">{{ item.name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            {% if found_items.themes %}
+                <div class="found-items-category" data-category="themes">
+                    <h6>Themes ({{ found_items.themes|length }})</h6>
+                    <div class="found-items-list">
+                        {% for item in found_items.themes %}
+                            <span class="badge {% if item.is_new %}bg-danger{% else %}bg-secondary{% endif %}">{{ item.name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            {% if found_items.keywords %}
+                <div class="found-items-category" data-category="keywords">
+                    <h6>Keywords ({{ found_items.keywords|length }})</h6>
+                    <div class="found-items-list">
+                        {% for keyword in found_items.keywords %}
+                            <span class="badge {% if keyword.is_new %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ keyword.name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+
+<div class="sidebar-card">
+    <div class="sidebar-card-header">
+        <i class="bi bi-info-circle me-2"></i>Current Movie Data
+    </div>
+    <div class="sidebar-card-body">
+        {% if current_genres %}
+            <div class="current-data-category">
+                <h6>Genres ({{ current_genres|length }})</h6>
+                <div class="current-items-list">
+                    {% for genre in current_genres %}<span class="current-item">{{ genre.name }}</span>{% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        {% if current_themes %}
+            <div class="current-data-category">
+                <h6>Themes ({{ current_themes|length }})</h6>
+                <div class="current-items-list">
+                    {% for theme in current_themes %}<span class="current-item">{{ theme.name }}</span>{% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        {% if current_keywords %}
+            <div class="current-data-category">
+                <h6>Keywords ({{ current_keywords|length }})</h6>
+                <div class="current-items-list">
+                    {% for keyword in current_keywords %}<span class="current-item">{{ keyword.name }}</span>{% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>

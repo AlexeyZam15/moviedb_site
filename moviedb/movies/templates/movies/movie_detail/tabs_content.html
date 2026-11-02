@@ -1,0 +1,202 @@
+﻿<!-- movies/templates/movies/movie_detail/tabs_content.html -->
+
+{% load movie_tags %}
+{% load static %}
+
+<!-- Глобальная навигация по якорям поверх всего -->
+<div class="global-anchor-nav">
+    <div class="global-anchor-wrapper">
+        <a href="#Movie-info" class="global-anchor-link active" data-anchor="Movie-info">
+            <i class="bi bi-controller"></i>
+            <span>Movie Info</span>
+        </a>
+        <a href="#overview" class="global-anchor-link" data-anchor="overview">
+            <i class="bi bi-info-circle"></i>
+            <span>Overview</span>
+        </a>
+        <a href="#details" class="global-anchor-link" data-anchor="details">
+            <i class="bi bi-list-check"></i>
+            <span>Details</span>
+        </a>
+        <a href="#companies" class="global-anchor-link" data-anchor="companies">
+            <i class="bi bi-building"></i>
+            <span>Companies</span>
+        </a>
+        <a href="#keywords" class="global-anchor-link" data-anchor="keywords">
+            <i class="bi bi-tags"></i>
+            <span>Keywords</span>
+        </a>
+
+        <a href="#screenshots" class="global-anchor-link" data-anchor="screenshots">
+            <i class="bi bi-image"></i>
+            <span>Screenshots</span>
+            {% with screenshots_count=Movie.backdrops_top|length|default:Movie.posters_top|length %}
+                {% if screenshots_count %}
+                    <span class="badge">{{ screenshots_count }}</span>
+                {% endif %}
+            {% endwith %}
+        </a>
+        {% if similar_games %}
+            <a href="#similar-movies" class="global-anchor-link" data-anchor="similar-movies">
+                <i class="bi bi-search-heart"></i>
+                <span>Similar movies</span>
+                <span class="badge">{{ similar_games|length }}</span>
+            </a>
+        {% endif %}
+    </div>
+    <div class="global-anchor-progress">
+        <div class="progress-bar" id="anchor-progress-bar"></div>
+    </div>
+</div>
+
+<!-- Мобильная карусель для якорей -->
+<div class="mobile-anchor-carousel">
+    <div class="carousel-container">
+        <div class="carousel-track" id="mobile-carousel-track">
+            <div class="carousel-slide" data-anchor="Movie-info">
+                <div class="mobile-anchor-card" data-target="#Movie-info">
+                    <i class="bi bi-controller"></i>
+                    <span>Movie Info</span>
+                </div>
+            </div>
+            <div class="carousel-slide" data-anchor="overview">
+                <div class="mobile-anchor-card" data-target="#overview">
+                    <i class="bi bi-info-circle"></i>
+                    <span>Overview</span>
+                </div>
+            </div>
+            <div class="carousel-slide" data-anchor="details">
+                <div class="mobile-anchor-card" data-target="#details">
+                    <i class="bi bi-list-check"></i>
+                    <span>Details</span>
+                </div>
+            </div>
+            <div class="carousel-slide" data-anchor="companies">
+                <div class="mobile-anchor-card" data-target="#companies">
+                    <i class="bi bi-building"></i>
+                    <span>Companies</span>
+                </div>
+            </div>
+            <div class="carousel-slide" data-anchor="keywords">
+                <div class="mobile-anchor-card" data-target="#keywords">
+                    <i class="bi bi-tags"></i>
+                    <span>Keywords</span>
+                </div>
+            </div>
+
+            <div class="carousel-slide" data-anchor="screenshots">
+                <div class="mobile-anchor-card" data-target="#screenshots">
+                    <i class="bi bi-image"></i>
+                    <span>Screenshots</span>
+                    {% with screenshots_count=Movie.backdrops_top|length|default:Movie.posters_top|length %}
+                        {% if screenshots_count %}
+                            <span class="badge">{{ screenshots_count }}</span>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+            {% if similar_games %}
+                <div class="carousel-slide" data-anchor="similar-movies">
+                    <div class="mobile-anchor-card" data-target="#similar-movies">
+                        <i class="bi bi-search-heart"></i>
+                        <span>Similar movies</span>
+                        <span class="badge">{{ similar_games|length }}</span>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="carousel-dots" id="mobile-carousel-dots"></div>
+</div>
+
+<!-- Весь контент на странице сразу -->
+<div class="anchor-content">
+    <div id="Movie-info" class="anchor-section">
+        <h1 class="display-5 fw-bold text-info mb-3" style="font-size: calc(1.625rem + 4.5vw);">
+            {{ Movie.name }}
+        </h1>
+        <div class="anchor-section-header" style="margin-top: 0.5rem;">
+            <h2><i class="bi bi-controller me-2"></i>Movie Info</h2>
+            <a href="#" class="anchor-back-to-top">↑ Back to top</a>
+        </div>
+        {% include 'movies/movie_detail/header.html' %}
+    </div>
+
+    <div id="overview" class="anchor-section">
+        <div class="anchor-section-header">
+            <h2><i class="bi bi-info-circle me-2"></i>Overview</h2>
+            <a href="#" class="anchor-back-to-top">↑ Back to top</a>
+        </div>
+        {% include 'movies/movie_detail/tab_overview.html' %}
+    </div>
+
+    <div id="details" class="anchor-section">
+        <div class="anchor-section-header">
+            <h2><i class="bi bi-list-check me-2"></i>Details</h2>
+            <a href="#" class="anchor-back-to-top">↑ Back to top</a>
+        </div>
+        {% include 'movies/movie_detail/tab_details.html' %}
+    </div>
+
+    <div id="companies" class="anchor-section">
+        <div class="anchor-section-header">
+            <h2><i class="bi bi-building me-2"></i>Companies</h2>
+            <a href="#" class="anchor-back-to-top">↑ Back to top</a>
+        </div>
+        {% include 'movies/movie_detail/tab_companies.html' %}
+    </div>
+
+    <div id="keywords" class="anchor-section">
+        <div class="anchor-section-header">
+            <h2><i class="bi bi-tags me-2"></i>Keywords</h2>
+            <a href="#" class="anchor-back-to-top">↑ Back to top</a>
+        </div>
+        {% include 'movies/movie_detail/tab_keywords.html' %}
+    </div>
+
+
+    <div id="screenshots" class="anchor-section">
+        <div class="anchor-section-header">
+            <h2><i class="bi bi-image me-2"></i>Screenshots</h2>
+            <a href="#" class="anchor-back-to-top">↑ Back to top</a>
+        </div>
+        {% include 'movies/movie_detail/tab_screenshots.html' %}
+    </div>
+
+    {% if similar_games %}
+        <div id="similar-movies" class="anchor-section">
+            <div class="anchor-section-header">
+                <h2><i class="bi bi-search-heart me-2"></i>Similar movies</h2>
+                <a href="#" class="anchor-back-to-top">↑ Back to top</a>
+            </div>
+            <div class="movies-container">
+                <div class="row" id="movies-grid-row">
+                    {% for similar_game in similar_games %}
+                        {% include 'movies/partials/_movie_card.html' with Movie=similar_game show_similarity=True %}
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="text-center mt-4">
+                <a href="{% url 'game_list' %}?find_similar=1&source_game={{ Movie.id }}"
+                   class="btn btn-primary-gradient px-4 py-2">
+                    <i class="bi bi-search-heart me-2"></i>
+                    Find More movies Like {{ Movie.name }}
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const backToTopLinks = document.querySelectorAll('.anchor-back-to-top');
+        backToTopLinks.forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
+    });
+</script>
+
+

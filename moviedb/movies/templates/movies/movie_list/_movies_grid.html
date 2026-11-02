@@ -1,0 +1,24 @@
+﻿<!-- movies/templates/movies/movie_list/_movies_grid.html -->
+<div class="row" id="movies-grid-row">
+    {% for movie_item in movies %}
+        {% if show_similarity %}
+            {% if movie_item.cached_card %}
+                {{ movie_item.cached_card|safe }}
+            {% else %}
+                {% with Movie=movie_item.Movie %}
+                    {% if movie_item.similarity %}
+                        {% include 'movies/partials/_movie_card.html' with Movie=Movie similarity_percent=movie_item.similarity show_similarity=True source_game=source_game page_number=movie_item.page_number|default:current_page|default:1 game_index=movie_item.game_index|default:forloop.counter0 %}
+                    {% else %}
+                        {% include 'movies/partials/_movie_card.html' with Movie=Movie show_similarity=True source_game=source_game page_number=movie_item.page_number|default:current_page|default:1 game_index=movie_item.game_index|default:forloop.counter0 %}
+                    {% endif %}
+                {% endwith %}
+            {% endif %}
+        {% else %}
+            {% if movie_item.cached_card %}
+                {{ movie_item.cached_card|safe }}
+            {% else %}
+                {% include 'movies/partials/_movie_card.html' with Movie=movie_item page_number=movie_item.page_number|default:current_page|default:1 game_index=movie_item.game_index|default:forloop.counter0 %}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+</div>

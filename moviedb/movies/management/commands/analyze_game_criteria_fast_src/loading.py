@@ -1,0 +1,507 @@
+﻿# movies/management/commands/analyze_game_criteria_fas_src/loading.py
+
+import os
+import re
+import sys
+import threading
+from collections import defaultdict
+from typing import Dict, Any, List, Optional, Set
+
+from django.db import connection
+
+from movies.models import Movie, Genre, Theme, Keyword
+from movies.analyze.pattern_manager import PatternManager
+
+
+class LoadingMixin:
+    """Загрузка данных: кэши критериев, паттерны, фильмы, связи."""
+
+    def _filter_movies_by_genre(self, movies: List[Dict]) -> List[Dict]:
+        """Фильтрует фильмы, у которых уже есть указанный жанр"""
+        if not self.filter_genre:
+            return movies
+
+        sys.stderr.write(f"\n   🎭 Фильтрация фильмов по жанру: '{self.filter_genre}'\n")
+        sys.stderr.flush()
+
+        try:
+            genre_obj = Genre.objects.filter(name__iexact=self.filter_genre).first()
+            if not genre_obj:
+                sys.stderr.write(f"   ⚠️ Жанр '{self.filter_genre}' не найден в БД\n")
+                sys.stderr.flush()
+                return []
+
+            genre_id = genre_obj.id
+            sys.stderr.write(f"   🔍 ID жанра: {genre_id}\n")
+            sys.stderr.flush()
+
+            # Имена таблицы и колонок берём из through-модели Movie.genres,
+            # чтобы не зависеть от того, как Django назвал FK (movie_id / game_id).
+            through = Movie.genres.through
+            table = through._meta.db_table
+            movie_col = next(
+                f.column for f in through._meta.fields
+                if f.remote_field and f.remote_field.model is Movie
+            )
+            genre_col = next(
+                f.column for f in through._meta.fields
+                if f.remote_field and f.remote_field.model is Genre
+            )
+
+            game_ids = set()
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    f"SELECT {movie_col} FROM {table} WHERE {genre_col} = %s",
+                    [genre_id],
+                )
+                for row in cursor.fetchall():
+                    game_ids.add(row[0])
+
+            sys.stderr.write(f"   📊 Найдено фильмов с жанром '{self.filter_genre}': {len(game_ids)}\n")
+            sys.stderr.flush()
+
+            filtered_movies = [g for g in movies if g['id'] in game_ids]
+
+            sys.stderr.write(f"   ✅ Отфильтровано: {len(filtered_movies)} фильмов из {len(movies)}\n")
+            sys.stderr.flush()
+
+            return filtered_movies
+
+        except Exception as e:
+            sys.stderr.write(f"   ⚠️ Ошибка фильтрации по жанру: {e}\n")
+            sys.stderr.flush()
+            return movies
+
+    def _load_existing_relations(self) -> Dict[str, set]:
+        """Загружает все существующие связи из БД для быстрой проверки.
+
+        В новой TMDB-модели есть M2M: genres, themes, keywords
+        (и production_companies, но для анализа критериев он не нужен).
+        M2M player_perspectives и game_modes в новой модели НЕТ.
+
+        ВАЖНО: flat set `keywords` (game_id, kw_id) НЕ строится —
+        он занимает ~360 МБ на 6 млн связей. Для проверки «новизны»
+        ключевых слов достаточно `keywords_by_game` (dict id -> set(kw_id)).
+        """
+        from movies.models import Movie
+
+        movie_table = Movie._meta.db_table  # 'movies_movie'
+
+        def _through_info(m2m_manager, related_model):
+            through = m2m_manager.through
+            table = through._meta.db_table
+            movie_col = next(
+                f.column for f in through._meta.fields
+                if f.remote_field and f.remote_field.model is Movie
+            )
+            related_col = next(
+                f.column for f in through._meta.fields
+                if f.remote_field and f.remote_field.model is related_model
+            )
+            return table, movie_col, related_col
+
+        genres_table, genres_movie_col, genres_genre_col = _through_info(Movie.genres, Genre)
+        themes_table, themes_movie_col, themes_theme_col = _through_info(Movie.themes, Theme)
+
+        existing_relations = {
+            'genres': set(),
+            'themes': set(),
+            'keywords': set(),  # оставлено для совместимости, но НЕ заполняется
+            'keywords_by_game': {},
+        }
+
+        with connection.cursor() as cursor:
+            cursor.execute(f"SELECT {genres_movie_col}, {genres_genre_col} FROM {genres_table}")
+            for row in cursor.fetchall():
+                existing_relations['genres'].add((row[0], row[1]))
+
+            cursor.execute(f"SELECT {themes_movie_col}, {themes_theme_col} FROM {themes_table}")
+            for row in cursor.fetchall():
+                existing_relations['themes'].add((row[0], row[1]))
+
+            # ИЗМЕНЕНО: заполняем ТОЛЬКО keywords_by_game (dict id -> set(kw_id)).
+            # flat set `keywords` (6 млн tuple) НЕ строим — экономия ~360 МБ.
+            cursor.execute(f"SELECT id, keyword_ids FROM {movie_table}")
+            kw_by_game = existing_relations['keywords_by_game']
+            for game_id, keyword_ids in cursor.fetchall():
+                if not keyword_ids:
+                    continue
+                kw_by_game[game_id] = set(keyword_ids)
+
+        return existing_relations
+
+    def _preload_all_data(self):
+        """Предзагрузка ВСЕХ данных в память с максимальной оптимизацией и фильтрацией по критерию"""
+        self.patterns = PatternManager.get_all_patterns()
+
+        # Защита: поля могут отсутствовать, если миксин используется без command.py
+        if not hasattr(self, '_keyword_trie'):
+            self._keyword_trie = None
+        if not hasattr(self, '_keyword_trie_lock') or self._keyword_trie_lock is None:
+            self._keyword_trie_lock = threading.Lock()
+        if not hasattr(self, 'max_keyword_id_before'):
+            self.max_keyword_id_before = 0
+        if not hasattr(self, 'new_keyword_ids'):
+            self.new_keyword_ids = set()
+
+        self.criteria_by_id = {
+            'genres': {},
+            'themes': {},
+            'keywords': {},
+        }
+
+        self.criteria_by_name = {
+            'genres': {},
+            'themes': {},
+            'keywords': {},
+        }
+
+        for g in Genre.objects.all().only('id', 'name'):
+            self.criteria_by_id['genres'][g.id] = g.name
+            self.criteria_by_name['genres'][g.name.lower()] = g.id
+
+        for t in Theme.objects.all().only('id', 'name'):
+            self.criteria_by_id['themes'][t.id] = t.name
+            self.criteria_by_name['themes'][t.name.lower()] = t.id
+
+        for k in Keyword.objects.all().only('id', 'name', 'tmdb_id'):
+            self.criteria_by_id['keywords'][k.id] = k.name
+            self.criteria_by_name['keywords'][k.name.lower()] = k.id
+
+        criteria_types_to_process = []
+
+        if hasattr(self, 'keywords_mode') and self.keywords_mode:
+            sys.stderr.write(f"   🔑 Режим анализа КЛЮЧЕВЫХ СЛОВ\n")
+            sys.stderr.flush()
+
+            if self.keyword_ids_filter is not None:
+                keywords_qs = Keyword.objects.filter(id__in=self.keyword_ids_filter).only('id', 'name')
+                sys.stderr.write(
+                    f"   🎯 Ограничение по ключевым словам: {len(self.keyword_ids_filter)} ID из файла\n"
+                )
+                sys.stderr.flush()
+            else:
+                keywords_qs = Keyword.objects.all().only('id', 'name')
+
+            keywords_patterns = {}
+            for keyword in keywords_qs:
+                name = keyword.name
+                keywords_patterns[name] = {
+                    'patterns': [re.compile(re.escape(name), re.IGNORECASE | re.UNICODE)],
+                    'stop_words': []
+                }
+            self.patterns['keywords'] = keywords_patterns
+            criteria_types_to_process = [('keywords', None)]
+
+            sys.stderr.write(
+                f"   🔑 Загружено ключевых слов для поиска: {len(keywords_patterns)}\n"
+            )
+            sys.stderr.flush()
+        else:
+            if hasattr(self, 'criteria_name') and self.criteria_name:
+                target_name = self.criteria_name.lower()
+                sys.stderr.write(f"   🔍 Универсальный поиск критерия: '{self.criteria_name}'\n")
+                sys.stderr.flush()
+
+                found_in_db = False
+                for crit_type in ['genres', 'themes']:
+                    if target_name in self.criteria_by_name[crit_type]:
+                        criteria_types_to_process.append((crit_type, self.criteria_name))
+                        found_in_db = True
+                        sys.stderr.write(f"   ✅ Найден в {crit_type}: '{self.criteria_name}'\n")
+                        sys.stderr.flush()
+
+                if not found_in_db:
+                    sys.stderr.write(
+                        f"   ⚠️ Критерий '{self.criteria_name}' не найден в БД\n")
+                    sys.stderr.flush()
+            elif self.theme:
+                criteria_types_to_process.append(('themes', self.theme))
+                sys.stderr.write(f"   📚 Фильтрация: загружаем ТОЛЬКО тему '{self.theme}'\n")
+                sys.stderr.flush()
+            else:
+                criteria_types_to_process = [
+                    ('genres', None),
+                    ('themes', None),
+                ]
+
+        self.compiled_patterns = []
+        self.pattern_match_counter_new = defaultdict(int)
+        self.pattern_match_counter_existing = defaultdict(int)
+        self.criteria_stop_words_cache = {}
+
+        for criteria_type, filter_name in criteria_types_to_process:
+            type_patterns = self.patterns.get(criteria_type, {})
+
+            if filter_name:
+                filter_name_lower = filter_name.lower()
+                matched_name = None
+                for name in type_patterns.keys():
+                    if name.lower() == filter_name_lower:
+                        matched_name = name
+                        break
+
+                if matched_name:
+                    patterns_dict = {matched_name: type_patterns[matched_name]}
+                    sys.stderr.write(
+                        f"   🔍 Найдены паттерны для '{matched_name}': {len(type_patterns[matched_name]['patterns'])} шт.\n")
+                    sys.stderr.flush()
+                else:
+                    patterns_dict = {}
+                    sys.stderr.write(f"   ⚠️ Паттерны для '{filter_name}' не найдены в {criteria_type}\n")
+                    sys.stderr.flush()
+            else:
+                patterns_dict = type_patterns
+
+            if self.custom_pattern and filter_name:
+                sys.stderr.write(f"   🔧 Добавляем пользовательский паттерн: '{self.custom_pattern}'\n")
+                sys.stderr.flush()
+
+                patterns_dict = dict(patterns_dict)
+                if filter_name in patterns_dict:
+                    if self.custom_pattern not in [getattr(p, 'pattern', str(p)) for p in
+                                                   patterns_dict[filter_name]['patterns']]:
+                        new_pattern = re.compile(self.custom_pattern, re.IGNORECASE | re.UNICODE)
+                        patterns_dict[filter_name]['patterns'].append(new_pattern)
+                else:
+                    patterns_dict[filter_name] = {
+                        'patterns': [re.compile(self.custom_pattern, re.IGNORECASE | re.UNICODE)],
+                        'stop_words': []
+                    }
+
+            for name, pattern_data in patterns_dict.items():
+                name_lower = name.lower()
+                criteria_id = self.criteria_by_name.get(criteria_type, {}).get(name_lower)
+                if criteria_id:
+                    patterns = pattern_data.get('patterns', [])
+                    stop_words = pattern_data.get('stop_words', [])
+
+                    criteria_key = (criteria_type, criteria_id, name)
+                    self.criteria_stop_words_cache[criteria_key] = stop_words
+
+                    for compiled_pattern in patterns:
+                        try:
+                            if hasattr(compiled_pattern, 'flags'):
+                                is_case_sensitive = (compiled_pattern.flags & re.IGNORECASE == 0)
+                            else:
+                                is_case_sensitive = False
+
+                            self.compiled_patterns.append({
+                                'type': criteria_type,
+                                'id': criteria_id,
+                                'name': name,
+                                'pattern': compiled_pattern,
+                                'pattern_str': compiled_pattern.pattern if hasattr(compiled_pattern,
+                                                                                   'pattern') else str(
+                                    compiled_pattern),
+                                'is_case_sensitive': is_case_sensitive,
+                            })
+                        except Exception:
+                            continue
+
+        sys.stderr.write(f"   ✅ Скомпилировано паттернов: {len(self.compiled_patterns)}\n")
+        if hasattr(self, 'criteria_name') and self.criteria_name:
+            patterns_by_name = {}
+            for p in self.compiled_patterns:
+                if p['name'] == self.criteria_name:
+                    if p['name'] not in patterns_by_name:
+                        patterns_by_name[p['name']] = {
+                            'patterns': [],
+                            'stop_words': self.criteria_stop_words_cache.get((p['type'], p['id'], p['name']), [])
+                        }
+                    patterns_by_name[p['name']]['patterns'].append(p['pattern_str'])
+
+            sys.stderr.write(
+                f"   🔍 Найдено паттернов для '{self.criteria_name}': {len(patterns_by_name.get(self.criteria_name, {}).get('patterns', []))}\n"
+            )
+
+            for crit_name, data in patterns_by_name.items():
+                stop_words = data['stop_words']
+                if stop_words:
+                    sys.stderr.write(f"      🛑 Стоп-слова для '{crit_name}': {stop_words}\n")
+                else:
+                    sys.stderr.write(f"      🛑 Стоп-слова для '{crit_name}': []\n")
+
+                for pattern in data['patterns']:
+                    sys.stderr.write(f"      - {pattern}\n")
+        sys.stderr.flush()
+
+    def _load_game_ids_file(self, path: str) -> Set[int]:
+        """Читает файл с ID фильмов (по одному на строку)."""
+        if not path or not os.path.exists(path):
+            return set()
+        ids = set()
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.isdigit():
+                        ids.add(int(line))
+        except Exception as e:
+            sys.stderr.write(f"   ⚠️ Ошибка чтения {path}: {e}\n")
+            sys.stderr.flush()
+        return ids
+
+    def _load_keyword_ids_file(self, path: str) -> Set[int]:
+        """Читает файл с ID ключевых слов (по одному на строку)."""
+        if not path or not os.path.exists(path):
+            return set()
+        ids = set()
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.isdigit():
+                        ids.add(int(line))
+        except Exception as e:
+            sys.stderr.write(f"   ⚠️ Ошибка чтения {path}: {e}\n")
+            sys.stderr.flush()
+        return ids
+
+    def _get_movies_to_analyze(self) -> List[Dict]:
+        """Максимально быстрая загрузка фильмов через сырой SQL или по имени"""
+
+        movie_table = Movie._meta.db_table  # 'movies_movie'
+
+        # НОВОЕ: если задан --Movie-ids-file — берём только эти фильмы
+        if self.game_ids_filter:
+            ids_list = list(self.game_ids_filter)
+            sys.stderr.write(f"\n   🎯 Обработка только фильмов из --Movie-ids-file: {len(ids_list)}\n")
+            sys.stderr.flush()
+
+            # В TMDB-модели есть только summary (+ tagline), остальных полей нет.
+            # Ключи storyline/rawg_description/wiki_description оставляем пустыми
+            # для совместимости с analyzer.py (он может их читать).
+            fields = ['id', 'name', 'summary']
+            fields_str = ', '.join(fields)
+
+            movies = []
+            batch_size = 5000
+            for i in range(0, len(ids_list), batch_size):
+                batch = ids_list[i:i + batch_size]
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        f"SELECT {fields_str} FROM {movie_table} WHERE id = ANY(%s) ORDER BY id",
+                        [batch]
+                    )
+                    for row in cursor.fetchall():
+                        movies.append({
+                            'id': row[0],
+                            'name': row[1],
+                            'summary': row[2],
+                            'storyline': '',
+                            'rawg_description': '',
+                            'wiki_description': '',
+                        })
+
+            sys.stderr.write(f"   ✅ Загружено {len(movies)} фильмов по фильтру ID\n")
+            sys.stderr.flush()
+            return movies
+
+        if self.game_name:
+            sys.stderr.write(f"\n   🔍 Поиск фильмов по имени: '{self.game_name}'\n")
+            sys.stderr.flush()
+
+            search_term = f"%{self.game_name}%"
+            fields = ['id', 'name', 'summary']
+            fields_str = ', '.join(fields)
+
+            sql = f"""
+                SELECT {fields_str}
+                FROM {movie_table}
+                WHERE name ILIKE %s
+                ORDER BY 
+                    CASE WHEN name ILIKE %s THEN 1 ELSE 2 END,
+                    rating DESC NULLS LAST,
+                    id
+                LIMIT %s
+                OFFSET %s
+            """
+
+            actual_limit = self.limit if self.limit else 50
+            actual_offset = self.offset if self.offset else 0
+
+            movies = []
+            with connection.cursor() as cursor:
+                exact_term = self.game_name
+                cursor.execute(sql, [search_term, exact_term, actual_limit, actual_offset])
+
+                for row in cursor.fetchall():
+                    movies.append({
+                        'id': row[0],
+                        'name': row[1],
+                        'summary': row[2],
+                        'storyline': '',
+                        'rawg_description': '',
+                        'wiki_description': '',
+                    })
+
+            sys.stderr.write(f"   ✅ Найдено фильмов по имени: {len(movies)}\n")
+            sys.stderr.flush()
+            return movies
+
+        sys.stderr.write(f"\n   📊 Подсчет количества фильмов... ")
+        sys.stderr.flush()
+
+        with connection.cursor() as cursor:
+            cursor.execute(f"SELECT COUNT(*) FROM {movie_table}")
+            total_count = cursor.fetchone()[0]
+
+        sys.stderr.write(f"{total_count} фильмов\n")
+        sys.stderr.flush()
+
+        if self.limit:
+            actual_limit = self.limit
+        else:
+            actual_limit = total_count - self.offset if self.offset > 0 else total_count
+
+        sys.stderr.write(f"   🎯 Будет загружено: {actual_limit} фильмов\n")
+        sys.stderr.flush()
+
+        fields = ['id', 'name', 'summary']
+        fields_str = ', '.join(fields)
+
+        sql = f"""
+            SELECT {fields_str}
+            FROM {movie_table}
+            ORDER BY id
+            OFFSET %s
+            LIMIT %s
+        """
+
+        movies = []
+        batch_size = 20000
+
+        sys.stderr.write(f"\n   ⬇️ Загрузка батчами по {batch_size} записей (сырой SQL)...\n")
+        sys.stderr.flush()
+
+        for offset in range(0, actual_limit, batch_size):
+            current_limit = min(batch_size, actual_limit - offset)
+            current_offset = self.offset + offset
+
+            with connection.cursor() as cursor:
+                cursor.execute(sql, [current_offset, current_limit])
+
+                batch = []
+                for row in cursor.fetchall():
+                    batch.append({
+                        'id': row[0],
+                        'name': row[1],
+                        'summary': row[2],
+                        'storyline': '',
+                        'rawg_description': '',
+                        'wiki_description': '',
+                    })
+
+                movies.extend(batch)
+
+            processed = len(movies)
+            percent = (processed / actual_limit) * 100 if actual_limit > 0 else 0
+
+            sys.stderr.write(f"\r   ⬇️ Загружено: {processed}/{actual_limit} фильмов ({percent:.1f}%)")
+            sys.stderr.flush()
+
+        sys.stderr.write(f"\n   ✅ Загружено {len(movies)} фильмов (сырой SQL, {batch_size} записей/батч)\n")
+        sys.stderr.flush()
+
+        return movies

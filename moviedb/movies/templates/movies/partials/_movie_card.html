@@ -1,0 +1,159 @@
+﻿<!-- movies/templates/movies/partials/_movie_card.html -->
+
+{% load movie_tags color_tags %}
+
+<div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12 mb-4 Movie-card-container"
+     data-page="1"
+     data-index="{{ forloop.counter0 }}"
+     data-movie-id="{{ Movie.id }}"
+        {% if show_similarity and Movie.similarity %}
+     data-similarity="{{ Movie.similarity }}"
+        {% endif %}
+        {% if source_game and source_game.id %}
+     data-source-movie-id="{{ source_game.id }}"
+        {% endif %}>
+
+    <div class="card Movie-card d-flex flex-column">
+
+        <div class="card-img-top-container position-relative">
+            <div id="Movie-carousel-{{ Movie.id }}" class="Movie-screenshot-carousel carousel slide"
+                 data-bs-ride="false" data-bs-interval="false" data-bs-wrap="true">
+
+                <div class="carousel-inner">
+                    {% if Movie.cover_url %}
+                        <div class="carousel-item active">
+                            <img src="{{ Movie.cover_url }}" class="d-block w-100 Movie-carousel-cover"
+                                 alt="{{ Movie.name }}" loading="lazy"
+                                 data-image="{{ Movie.cover_url }}">
+                        </div>
+                    {% endif %}
+
+                    {% for img in Movie.card_backdrops %}
+                        <div class="carousel-item {% if not Movie.cover_url and forloop.first %}active{% endif %}">
+                            <img src="{{ img.url_w780 }}" class="d-block w-100 Movie-carousel-screenshot"
+                                 alt="{{ Movie.name }} - Кадр {{ forloop.counter }}" loading="lazy"
+                                 data-gallery-index="{{ forloop.counter0 }}"
+                                     data-image="{{ img.url_original }}">
+                        </div>
+                    {% endfor %}
+
+                    {% if not Movie.cover_url and not Movie.card_backdrops %}
+                        <div class="carousel-item active">
+                            <div class="d-block w-100 bg-dark d-flex align-items-center justify-content-center"
+                                 style="height: 280px;">
+                                <span class="text-muted">No Cover</span>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if Movie.cover_url and Movie.card_backdrops or Movie.card_backdrops|length > 1 %}
+                    <div class="carousel-indicators">
+                        {% if Movie.cover_url %}
+                            <button type="button" data-bs-target="#Movie-carousel-{{ Movie.id }}" data-bs-slide-to="0"
+                                    class="active" aria-current="true" aria-label="Cover"></button>
+                            {% for img in Movie.card_backdrops %}
+                                <button type="button" data-bs-target="#Movie-carousel-{{ Movie.id }}"
+                                        data-bs-slide-to="{{ forloop.counter }}"
+                                        aria-label="Кадр {{ forloop.counter }}"></button>
+                            {% endfor %}
+                        {% else %}
+                            {% for img in Movie.card_backdrops %}
+                                <button type="button" data-bs-target="#Movie-carousel-{{ Movie.id }}"
+                                        data-bs-slide-to="{{ forloop.counter0 }}"
+                                        class="{% if forloop.first %}active{% endif %}"
+                                        aria-label="Кадр {{ forloop.counter }}"></button>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <button class="carousel-control-prev" type="button" data-bs-target="#Movie-carousel-{{ Movie.id }}"
+                            data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#Movie-carousel-{{ Movie.id }}"
+                            data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                {% endif %}
+            </div>
+            {% if Movie.rating %}
+                <div class="position-absolute top-0 start-0 p-1 rating-overlay-card" style="z-index: 10;">
+                    {% rating_star_svg Movie.rating 60 %}
+                </div>
+            {% else %}
+                <div class="position-absolute top-0 start-0 p-1 no-rating-container-card" style="z-index: 10;"
+                     data-bs-toggle="tooltip" data-bs-placement="right" title="No Rating">
+                    <svg viewBox="0 0 60 60" width="60" height="60">
+                        <path d="M30,7.5 L36.45,22.65 L52.5,22.65 L39.525,31.1 L45.975,46.25 L30,37.8 L14.025,46.25 L20.475,31.1 L7.5,22.65 L23.55,22.65 Z"
+                              fill="none" stroke="#6c757d" stroke-width="2"/>
+                        <text x="30" y="34" text-anchor="middle" fill="#6c757d" font-size="14" font-weight="bold">N/A
+                        </text>
+                    </svg>
+                </div>
+            {% endif %}
+
+            {% if show_similarity %}
+                <div class="position-absolute top-0 end-0 p-1 similarity-container" style="z-index: 10;"></div>
+            {% endif %}
+        </div>
+
+        <div class="card-body d-flex flex-column">
+            <div class="Movie-title-container">
+                <h6 class="card-title">{{ Movie.name }}</h6>
+            </div>
+
+            {% if Movie.genres.all %}
+                <div class="genres-container">
+                    <div class="Movie-genres">
+                        {% with genre_limit=8 %}
+                            {% for genre in Movie.genres.all|slice:":genre_limit" %}
+                                <span class="badge bg-primary small">{{ genre.name }}</span>
+                            {% endfor %}
+                            {% if Movie.genres.all|length > genre_limit %}
+                                <span class="badge bg-secondary small"
+                                      data-bs-toggle="tooltip" data-bs-placement="top"
+                                      title="+{{ Movie.genres.all|length|add:"-genre_limit" }} more genres">
+                                    +{{ Movie.genres.all|length|add:"-genre_limit" }}
+                                </span>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="genres-container">
+                    <div class="Movie-genres"></div>
+                </div>
+            {% endif %}
+
+            <div class="mt-auto">
+                {% if Movie.first_release_date %}
+                    <div class="release-year">
+                        <small class="text-muted">{{ Movie.first_release_date|date:"Y" }}</small>
+                    </div>
+                {% else %}
+                    <div class="release-year">
+                        <small class="text-muted">TBA</small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <div class="d-grid gap-2">
+                <a href="{% url 'game_detail' Movie.id %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-info-circle"></i> Details
+                </a>
+                <a href="{% get_find_similar_url Movie %}" class="btn btn-sm btn-outline-info">
+                    <i class="bi bi-search-heart"></i> Find Similar
+                </a>
+                <div class="compare-button-placeholder" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+

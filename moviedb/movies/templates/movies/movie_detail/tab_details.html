@@ -1,0 +1,98 @@
+﻿<!-- movies/templates/movies/movie_detail/tab_details.html -->
+
+{% if Movie.themes.all or Movie.genres.all or Movie.tmdb_id or Movie.imdb_id or Movie.status %}
+    <div class="row g-4">
+
+        {% if Movie.tmdb_id %}
+            <div class="col-md-6">
+                <div class="vertical-detail-card">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small"><i class="bi bi-database me-1"></i>TMDB ID</span>
+                    </div>
+                    <div>
+                        <span class="fw-bold text-light">{{ Movie.tmdb_id }}</span>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if Movie.imdb_id %}
+            <div class="col-md-6">
+                <div class="vertical-detail-card">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small"><i class="bi bi-film me-1"></i>IMDb ID</span>
+                    </div>
+                    <div>
+                        <a href="https://www.imdb.com/title/{{ Movie.imdb_id }}/"
+                           target="_blank" rel="noopener noreferrer"
+                           class="text-info">{{ Movie.imdb_id }}</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if Movie.status %}
+            <div class="col-md-6">
+                <div class="vertical-detail-card">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small"><i class="bi bi-info-circle me-1"></i>Status</span>
+                    </div>
+                    <div>
+                        <span class="fw-bold text-light">{{ Movie.status }}</span>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if Movie.original_language %}
+            <div class="col-md-6">
+                <div class="vertical-detail-card">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small"><i class="bi bi-translate me-1"></i>Original Language</span>
+                    </div>
+                    <div>
+                        <span class="fw-bold text-light">{{ Movie.original_language|upper }}</span>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if Movie.genres.all %}
+            <div class="col-md-6">
+                <div class="vertical-detail-card genres">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small"><i class="bi bi-tags me-1"></i>Genres</span>
+                        <span class="badge bg-primary ms-2">{{ Movie.genres.all|length }}</span>
+                    </div>
+                    <div class="d-flex flex-wrap gap-1">
+                        {% for genre in Movie.genres.all %}
+                            <span class="badge bg-primary">{{ genre.name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if Movie.themes.all %}
+            <div class="col-md-6">
+                <div class="vertical-detail-card themes">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small"><i class="bi bi-palette me-1"></i>Themes</span>
+                        <span class="badge bg-success ms-2">{{ Movie.themes.all|length }}</span>
+                    </div>
+                    <div class="d-flex flex-wrap gap-1">
+                        {% for theme in Movie.themes.all %}
+                            <span class="badge bg-success">{{ theme.name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
+{% else %}
+    <div class="text-center py-4">
+        <i class="bi bi-info-circle text-muted" style="font-size: 2rem;"></i>
+        <p class="text-muted mt-2 mb-0">No detailed information available</p>
+    </div>
+{% endif %}

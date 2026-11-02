@@ -1,0 +1,259 @@
+﻿<!-- movies/templates/movies/movie_comparison.html -->
+{% extends 'base.html' %}
+
+{% load static %}
+{% load movie_tags color_tags %}
+
+{% block title %}
+    {% if is_criteria_comparison %}
+        Compare: Search Criteria vs {{ game2.name }} - GamesPeek
+    {% else %}
+        Compare: {{ game1.name }} vs {{ game2.name }} - GamesPeek
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'movies/css/game_comparison.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid py-4" data-similarity-score="{{ similarity_score|default:0 }}">
+
+        {% if not is_criteria_comparison %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="similarity-header">
+                        <div class="similarity-visual">
+                            {% if similarity_score %}
+                                {% similarity_pattern_svg similarity_score 80 %}
+                            {% else %}
+                                {% similarity_pattern_svg 0 80 %}
+                            {% endif %}
+                        </div>
+                        <div class="similarity-info text-center">
+                            {% if similarity_score %}
+                                <h3 class="text-warning mb-2">{{ similarity_score|floatformat:1 }}% Match</h3>
+                            {% else %}
+                                <h3 class="text-warning mb-2">0% Match</h3>
+                            {% endif %}
+                            <p class="text-muted mb-0">
+                                {% if similarity_score >= 80 %}Highly Similar
+                                {% elif similarity_score >= 60 %}Moderately Similar
+                                {% elif similarity_score >= 40 %}Somewhat Similar
+                                {% else %}Low Similarity{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                {% if is_criteria_comparison %}
+                    {% include 'movies/movie_comparison/_comparison_movie_card.html' with Movie=None criteria_genres=criteria_genres criteria_keywords=criteria_keywords criteria_themes=criteria_themes criteria_production_companies=criteria_production_companies similarity_score=similarity_score %}
+                {% else %}
+                    {% include 'movies/movie_comparison/_comparison_movie_card.html' with Movie=game1 similarity_score=100 %}
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                {% include 'movies/movie_comparison/_comparison_movie_card.html' with Movie=game2 similarity_score=similarity_score %}
+            </div>
+        </div>
+
+        {% if similarity_data and similarity_data.criteria %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="shared-section">
+                        <h4 class="section-title">
+                            <i class="bi bi-pie-chart-fill me-2"></i>Similarity Breakdown
+                        </h4>
+                        <div class="similarity-breakdown">
+                            {% for criterion in similarity_data.criteria %}
+                                <div class="similarity-category">
+                                    <div class="category-header">
+                                        <div class="category-info">
+                                            <div class="category-name">
+                                                <span>{{ criterion.icon }}</span>
+                                                {{ criterion.name }}
+                                                <small class="text-muted">({{ criterion.common }}/{{ criterion.total }})</small>
+                                            </div>
+                                            <div class="category-meta">
+                                                <span class="weight-badge"><i class="bi bi-speedometer2 me-1"></i>{{ criterion.weight|floatformat:1 }}%</span>
+                                                <span class="impact-badge"><i class="bi bi-graph-up me-1"></i>{{ criterion.percentage|floatformat:1 }}%</span>
+                                            </div>
+                                        </div>
+                                        <div class="category-contribution">
+                                            <span class="contribution-value">+{{ criterion.contribution|floatformat:1 }}<small>%</small></span>
+                                        </div>
+                                    </div>
+                                    {% if criterion.common > 0 %}
+                                        <div class="shared-items-grid">
+                                            <span class="shared-item bg-{{ criterion.color }}"
+                                                  data-criterion-type="{{ criterion.map_name }}">
+                                                <i class="bi bi-check-circle-fill me-1"></i>{{ criterion.common }} common
+                                            </span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                            {% if similarity_data.bonus %}
+                                <div class="similarity-category bonus-category">
+                                    <div class="category-header">
+                                        <div class="category-info">
+                                            <div class="category-name"><span>✨</span> Bonus</div>
+                                        </div>
+                                        <div class="category-contribution">
+                                            <span class="contribution-value">+{{ similarity_data.bonus|floatformat:1 }}<small>%</small></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            <div class="similarity-category total-category">
+                                <div class="category-header">
+                                    <div class="category-info">
+                                        <div class="category-name"><span>📈</span> Total Similarity</div>
+                                    </div>
+                                    <div class="total-score">
+                                        <span class="similarity-badge">{{ similarity_data.total|floatformat:1 }}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number">{{ shared_genres_count }}</div>
+                    <div class="stat-label">Shared Genres</div>
+                    <div class="stat-description">Common categories</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number">{{ shared_keywords_count }}</div>
+                    <div class="stat-label">Shared Features</div>
+                    <div class="stat-description">Common plot elements</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number">{{ shared_themes_count }}</div>
+                    <div class="stat-label">Shared Themes</div>
+                    <div class="stat-description">Common atmosphere</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number">{{ shared_production_companies_count|default:0 }}</div>
+                    <div class="stat-label">Shared Companies</div>
+                    <div class="stat-description">Same studios</div>
+                </div>
+            </div>
+        </div>
+
+        {% if shared_genres_count > 0 %}
+            <div class="row mb-4" id="shared-genres-section">
+                <div class="col-12">
+                    <div class="shared-section">
+                        <h4 class="section-title">🎬 Shared Genres</h4>
+                        <div class="shared-items-grid">
+                            {% for genre in shared_genres %}
+                                <span class="shared-item bg-purple">{{ genre.name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if shared_themes_count > 0 %}
+            <div class="row mb-4" id="shared-themes-section">
+                <div class="col-12">
+                    <div class="shared-section">
+                        <h4 class="section-title">🎭 Shared Themes</h4>
+                        <div class="shared-items-grid">
+                            {% for theme in shared_themes %}
+                                <span class="shared-item bg-orange">{{ theme.name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if shared_production_companies_count|default:0 > 0 %}
+            <div class="row mb-4" id="shared-companies-section">
+                <div class="col-12">
+                    <div class="shared-section">
+                        <h4 class="section-title">🏢 Shared Production Companies</h4>
+                        <div class="shared-items-grid">
+                            {% for company in shared_production_companies %}
+                                <span class="shared-item bg-secondary">{{ company.name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if shared_keywords_count > 0 %}
+            <div class="row mb-4" id="shared-keywords-section">
+                <div class="col-12">
+                    <div class="shared-section">
+                        <h4 class="section-title">🔑 Shared Features</h4>
+                        <div class="shared-items-grid">
+                            {% for keyword in shared_keywords %}
+                                <span class="shared-item bg-success">{{ keyword.name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="action-buttons">
+                    {% if is_criteria_comparison %}
+                        {% get_find_similar_url criteria_virtual_game as back_url %}
+                        <a href="{{ back_url }}" class="btn btn-outline-primary btn-lg">
+                            <i class="bi bi-arrow-left"></i> Back to Similar movies
+                        </a>
+                    {% else %}
+                        <a href="{% url 'game_detail' game1.pk %}" class="btn btn-outline-primary btn-lg">
+                            <i class="bi bi-arrow-left"></i> Back to {{ game1.name }}
+                        </a>
+                    {% endif %}
+
+                    <a href="{% url 'game_detail' game2.pk %}" class="btn btn-outline-primary btn-lg">
+                        Back to {{ game2.name }} <i class="bi bi-arrow-right"></i>
+                    </a>
+
+                    {% if not is_criteria_comparison %}
+                        {% get_find_similar_url game1 as find_similar_url %}
+                        <a href="{{ find_similar_url }}" class="btn btn-primary-gradient btn-lg">
+                            <i class="bi bi-search"></i> Find Similar movies
+                        </a>
+                    {% else %}
+                        <a href="{% url 'game_list' %}" class="btn btn-primary-gradient btn-lg">
+                            <i class="bi bi-search"></i> Find More movies
+                        </a>
+                    {% endif %}
+
+                    <button id="copyComparisonAsText" class="btn btn-outline-success btn-lg">
+                        <i class="bi bi-files"></i> Copy as Text
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'movies/js/game_comparison.js' %}"></script>
+{% endblock %}

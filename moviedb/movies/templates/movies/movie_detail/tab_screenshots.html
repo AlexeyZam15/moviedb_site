@@ -1,0 +1,65 @@
+﻿<!-- movies/templates/movies/movie_detail/tab_screenshots.html -->
+
+{% load movie_tags %}
+
+<div class="screenshots-gallery">
+
+    {% if Movie.backdrops_top %}
+        <h5 class="mb-3"><i class="bi bi-film me-2"></i>Movie Stills</h5>
+        <div class="row g-3 mb-4">
+            {% for img in Movie.backdrops_top %}
+                <div class="col-md-6 col-lg-4 col-xl-3">
+                    <div class="screenshot-card-fixed card h-100 border-0">
+                        <div class="screenshot-container-fixed position-relative overflow-hidden rounded">
+                            <img src="{{ img.url_w780 }}"
+                                 class="screenshot-image-fixed gallery-img w-100 h-100"
+                                 alt="{{ Movie.name }} - Кадр {{ forloop.counter }}"
+                                 data-image="{{ img.url_original }}"
+                                 loading="lazy">
+                            <div class="hover-overlay position-absolute top-0 start-0 w-100 h-100">
+                                <div class="position-absolute top-50 start-50 translate-middle">
+                                    <i class="bi bi-zoom-in text-light fs-3"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% elif Movie.posters_top %}
+        <h5 class="mb-3"><i class="bi bi-card-image me-2"></i>Постеры</h5>
+        <div class="row g-3 mb-4">
+            {% for img in Movie.posters_top %}
+                <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+                    <div class="screenshot-card-fixed card h-100 border-0">
+                        <div class="screenshot-container-fixed position-relative overflow-hidden rounded">
+                            <img src="{{ img.url_w342 }}"
+                                 class="screenshot-image-fixed gallery-img w-100 h-100"
+                                 alt="{{ Movie.name }} - Постер {{ forloop.counter }}"
+                                 data-image="{{ img.url_original }}"
+                                 loading="lazy">
+                            <div class="hover-overlay position-absolute top-0 start-0 w-100 h-100">
+                                <div class="position-absolute top-50 start-50 translate-middle">
+                                    <i class="bi bi-zoom-in text-light fs-3"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="Movie-detail-card card">
+            <div class="card-body text-center py-5">
+                <div class="mb-3">
+                    <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                </div>
+                <h5 class="text-muted mb-2">No Images Available</h5>
+                <p class="text-muted mb-0">
+                    Images for this movie haven't been loaded yet.
+                </p>
+            </div>
+        </div>
+    {% endif %}
+
+</div>
