@@ -1,150 +1,190 @@
 <div align="center">
 
-# 🎮 GamesPeek – Intelligent Game Discovery Engine
+# 🎬 MovieDB – Movies & TV Series Discovery
 
-**Find similar games across a database of 80,000+ titles**
+**Explore movies and TV shows powered by TMDB metadata**
 
 [![English](https://img.shields.io/badge/Language-English-red)](README.md)
-[![Русский](https://img.shields.io/badge/Язык-Русский-blue)](README.ru.md)
+[![Русский](https://img.shields.io/badge/Language-Russian-blue)](README.ru.md)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Desktop App](https://img.shields.io/badge/Download-Windows%20.exe-blue)](https://github.com/AlexeyZam15/GamesPeek_site/releases/latest)
+[![GitHub](https://img.shields.io/badge/GitHub-moviedb__site-181717)](https://github.com/AlexeyZam15/moviedb_site)
 [![Discord](https://img.shields.io/badge/Discord-Join-7289da)](https://discord.gg/PMZsfrCnre)
 
 </div>
 
 ---
 
-## 📦 Download
+## 📌 Project Status
 
-**Windows users** can grab a portable archive with the EXE — no Python or PostgreSQL installation required.
-
-➡️ **[Download the latest version](https://github.com/AlexeyZam15/GamesPeek_site/releases/latest)**
-
-1. Open the **Releases** section on GitHub
-2. Download `gamespeek-*.zip`
-3. Extract to any folder (e.g. `C:\GamesPeek`)
-4. Run **`gamespeek.exe`**
-
----
-
-## 💬 Community
-
-Join our Discord for support, feedback, and updates:
-
-➡️ **[Join Discord](https://discord.gg/PMZsfrCnre)**
-
----
-
-## 💝 Support the Project
-
-If GamesPeek is useful to you, consider supporting development:
-
-➡️ **[Support the author](https://dalink.to/wolfgunt)**
-
-Thank you for your support! ❤️
-
----
-
-## 🖥️ Desktop App (Windows)
-
-Portable GamesPeek build — **no installation**, everything inside the archive.
-
-### What's inside the archive
-
-- `gamespeek.exe` — small launcher (opens a GUI window with logs)
-- `venv/` — bundled Python environment with all dependencies
-- `PostgreSQL/` — embedded PostgreSQL 18 binaries
-- `database.dump` — full database dump (~80,000+ games, schema + data)
-- `staticfiles/` — collected static assets
-- `run.py`, `igdb_site/`, `games/` — Django project
-- `.env` — configuration (DB credentials, API keys)
-
-### First launch
-
-On the first run, GamesPeek will:
-
-1. Initialize a local PostgreSQL instance in `%APPDATA%\IGDB_Site_PostgreSQL`
-2. Restore the bundled `database.dump` (~80,000+ games)
-3. Start the local server at **http://127.0.0.1:8000** and open it in your browser
-
-The first launch takes **1–2 minutes** (database restore). Subsequent launches are fast.
-
-### Notes
-
-- No Redis required — the desktop build uses Django's `LocMemCache`
-- To reset the local database, close the app and delete `%APPDATA%\IGDB_Site_PostgreSQL`
-- The archive is self-contained; nothing is installed system-wide
+**Source code only.** There is no public website and no desktop build yet — the project is under active development. This README describes the current codebase and how to run it locally.
 
 ---
 
 ## 🎯 Core Concept
 
-GamesPeek solves a simple problem: **you know what games you like, but you don't know what to play next.**
+MovieDB is a Django web application for discovering movies and TV series. It uses **TMDB** as the data source for titles, genres, keywords, themes, ratings, and related metadata.
 
-Instead of endless scrolling through stores or reading reviews:
+The idea is simple: you know what you like, and you want to find something similar to watch next.
 
-1. **Find a game** you love (via search, browsing with filters)
-2. **Click "Find Similar"** on its card or detail page
-3. **Get ranked recommendations** — from most similar to least similar
-
-### Example Recommendations
-
-| Source Game | Similar Games Found |
-|-------------|---------------------|
-| The Witcher 3 | Kingdom Come Deliverance, Skyrim, Dragon Age Inquisition |
-| Dark Souls | Elden Ring, Sekiro, Bloodborne, Nioh |
-| Stardew Valley | Animal Crossing, My Time at Portia, Coral Island |
-| Hollow Knight | Ori, Dead Cells, Blasphemous |
-
-### Two Ways to Discover Games
-
-| Workflow | What happens |
-|----------|---------------|
-| **One-click similarity** | Pick any game, click "Find Similar", get ranked recommendations |
-| **Manual criteria** | Build your own search with genres, keywords, themes, platforms, release year, game modes, and engines |
+1. **Browse or search** for a movie or TV series
+2. **Open its card** to see details and metadata
+3. **Get similar titles** ranked by similarity of genres, keywords, themes, and other TMDB attributes
+4. **Compare** two titles side by side
 
 ---
 
 ## 🔍 Features
 
-- **80,000+ game database** covering PC, PlayStation, Xbox, Nintendo Switch, and mobile
-- **Full coverage of RPG and Strategy genres** — every RPG and Strategy game is already in the database
-- **Intelligent similarity algorithm** analyzing genres, keywords, themes, and more
-- **Advanced search filters** by genre, platform, theme, keyword, developer, game mode, engine, and release year
-- **Side-by-side game comparison** to compare ratings, features, and specs
-- **Detailed game information** including descriptions, screenshots, and ratings
-- **Mobile-responsive design** for gaming on any device
-- **Portable Windows desktop app** — run locally with no installation
+- **Movies and TV series** catalog backed by TMDB data
+- **Search** across titles with filters
+- **Similar titles** based on genres, keywords, themes, and other metadata
+- **Advanced filters** — genre, theme, keyword, release year, rating, and more
+- **Side-by-side comparison** of two titles
+- **Detailed title pages** with summary, tagline, ratings, and metadata
+- **Caching layer** for title cards and counts (Redis in production, LocMemCache as fallback)
+- **Django admin** for content management
+- **Feedback form** for user messages
 
 ---
 
 ## 🛠️ Technology Stack
 
-- **Backend:** Django 5.x, PostgreSQL
+- **Backend:** Django 5.2, Python 3.11
+- **Database:** PostgreSQL (`psycopg2-binary`, `dj-database-url`)
+- **Data source:** TMDB API (`TMDB_API_KEY`, `TMDB_API_READ_ACCESS_TOKEN`)
 - **Frontend:** Bootstrap 5, Vanilla JavaScript
-- **Caching:** Django LocMemCache (desktop build, no Redis required)
-- **Database:** 80,000+ games from IGDB API
-- **Desktop:** PyInstaller launcher, embedded PostgreSQL 18
+- **Caching:** Redis via `django_redis` (optional; LocMemCache fallback)
+- **Static files:** WhiteNoise
+- **WSGI server:** Gunicorn
+- **Container:** Docker (`Dockerfile`, `start.sh`, `railway.json`)
+- **Text analysis:** NLTK, joblib
 
 ---
 
-## ⚙️ Requirements
+## 🚀 Quick Start (Local Development)
 
-- **Windows 10/11** (64-bit)
-- **Disk space:** ~4–5 GB (archive + restored database)
-- **RAM:** 2 GB minimum (4 GB recommended)
-- **Browser:** any modern one (Chrome, Edge, Firefox, Yandex Browser)
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/AlexeyZam15/moviedb_site.git
+cd moviedb_site
+```
+
+### 2. Create a virtual environment
+
+```bash
+python -m venv venv
+```
+
+Windows:
+
+```powershell
+venv\Scripts\activate
+```
+
+Linux/macOS:
+
+```bash
+source venv/bin/activate
+```
+
+### 3. Install dependencies
+
+```bash
+pip install -r requirements-base.txt
+```
+
+### 4. Configure environment
+
+Create a `.env` file in the project root and fill in the variables (see the section below). At minimum you need:
+
+- `DJANGO_SECRET_KEY`
+- `DJANGO_DEBUG=True`
+- `TMDB_API_KEY`
+- `TMDB_API_READ_ACCESS_TOKEN`
+- `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`
+
+### 5. Apply migrations
+
+```bash
+python manage.py migrate
+```
+
+### 6. Run the development server
+
+```bash
+python manage.py runserver
+```
+
+Then open **http://127.0.0.1:8000**.
 
 ---
 
-## 🐛 Debug Mode
+## 📥 Loading Data from TMDB
 
-If something goes wrong, run `gamespeek.exe` and check the log in the launcher window. Logs are also saved in `logs/`
-next to the `.exe`:
+TMDB data is loaded through management commands located in `movies/management/commands/`:
 
-- `logs/gamespeek_*.log` — general launcher log
-- `logs/postgresql_*.log` — PostgreSQL log
+- `load_tmdb` — TMDB loading pipeline (API client, collector, loader, offset manager, cache)
+- `load_movies` — loads movies and TV series from TMDB
+- `full_pipeline` — end-to-end processing pipeline
+
+Run a command with:
+
+```bash
+python manage.py <command_name>
+```
+
+Check the available options with:
+
+```bash
+python manage.py <command_name> --help
+```
+
+You need a valid `TMDB_API_KEY` / `TMDB_API_READ_ACCESS_TOKEN` in `.env` before loading data.
+
+---
+
+## ⚙️ Environment Variables
+
+The project reads configuration from `.env` (via `python-dotenv`). Variable names used by the code:
+
+| Variable | Purpose |
+|----------|---------|
+| `DJANGO_SECRET_KEY` | Django secret key |
+| `DJANGO_DEBUG` | `True` / `False` |
+| `ALLOWED_HOSTS` | Comma-separated allowed hosts |
+| `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` | PostgreSQL connection |
+| `DATABASE_URL` | Optional full DB URL (Railway, external PostgreSQL) |
+| `TMDB_API_KEY` | TMDB API key |
+| `TMDB_API_READ_ACCESS_TOKEN` | TMDB read access token |
+| `EMAIL_HOST_PASSWORD` | SMTP password for the feedback form |
+| `INDEXNOW_KEY` | IndexNow key for search engines |
+| `VPS_HOST`, `VPS_USER`, `VPS_PATH`, `SSH_PASSWORD` | VPS deployment helpers |
+
+---
+
+## 🌐 Deployment
+
+The repository includes a Docker-based deployment path:
+
+- `Dockerfile` — Python 3.11 slim image with dependencies
+- `start.sh` — runs migrations and starts Gunicorn
+- `railway.json` — Railway builder and start command
+
+The container expects a reachable PostgreSQL instance and a valid `DATABASE_URL` (or `DB_*` variables). Redis is
+optional: if it is unavailable, the application falls back to Django LocMemCache.
+
+**Note:** a live deployment is not provided yet — these files describe how the project can be deployed, not a running
+service.
+
+---
+
+## 🐛 Debugging
+
+- `DJANGO_DEBUG=True` enables Django Debug Toolbar on localhost
+- Slow requests are logged by custom middleware (`SlowRequestLoggerMiddleware`, `TimingMiddleware`)
+- Django logs are written to `logs/django.log`, slow SQL to `logs/slow_sql.log`
 
 ---
 
@@ -168,12 +208,23 @@ This project is licensed under the MIT License. Free to use, modify, and distrib
 
 - **Django** — web framework
 - **PostgreSQL** — database
-- **IGDB API** — game data source
-- **PyInstaller** — EXE build
+- **TMDB API** — movie and TV series data source
 - **Bootstrap 5** — frontend
-- **Django LocMemCache** — cache in the desktop build
+- **Redis / django_redis** — optional caching
+- **WhiteNoise** — static files
+- **Gunicorn** — WSGI server
 
-*GamesPeek is not affiliated with or endorsed by IGDB or Twitch.*
+*MovieDB uses the TMDB API but is not endorsed or certified by TMDB.*
+
+---
+
+## 💝 Support the Project
+
+If MovieDB is useful to you, consider supporting development:
+
+➡️ **[Support the author](https://dalink.to/wolfgunt)**
+
+Thank you for your support! ❤️
 
 ---
 
@@ -181,6 +232,6 @@ This project is licensed under the MIT License. Free to use, modify, and distrib
 
 - **Email:** gamespeek@mail.ru
 - **Discord:** [Join our server](https://discord.gg/PMZsfrCnre)
-- **GitHub:** [AlexeyZam15/GamesPeek_site](https://github.com/AlexeyZam15/GamesPeek_site)
+- **GitHub:** [AlexeyZam15/moviedb_site](https://github.com/AlexeyZam15/moviedb_site)
 
 ---

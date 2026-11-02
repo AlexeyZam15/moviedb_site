@@ -1,150 +1,189 @@
 <div align="center">
 
-# 🎮 GamesPeek – Intelligent Game Discovery Engine
+# 🎬 MovieDB – Поиск фильмов и сериалов
 
-**Поиск похожих игр по базе из 80 000+ тайтлов**
+**Каталог фильмов и сериалов на данных TMDB**
 
 [![Русский](https://img.shields.io/badge/Язык-Русский-blue)](README.ru.md)
 [![English](https://img.shields.io/badge/Language-English-red)](README.md)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Desktop App](https://img.shields.io/badge/Скачать-Windows%20.exe-blue)](https://github.com/AlexeyZam15/GamesPeek_site/releases/latest)
+[![GitHub](https://img.shields.io/badge/GitHub-moviedb__site-181717)](https://github.com/AlexeyZam15/moviedb_site)
 [![Discord](https://img.shields.io/badge/Discord-Присоединиться-7289da)](https://discord.gg/PMZsfrCnre)
 
 </div>
 
 ---
 
-## 📦 Скачать готовую программу
+## 📌 Статус проекта
 
-**Для пользователей Windows** доступен портативный архив с EXE-файлом — установка Python и PostgreSQL не требуется.
-
-➡️ **[Скачать последнюю версию](https://github.com/AlexeyZam15/GamesPeek_site/releases/latest)**
-
-1. Перейдите в раздел **Releases** на GitHub
-2. Скачайте архив `gamespeek-*.zip`
-3. Распакуйте в любую папку (например, `C:\GamesPeek`)
-4. Запустите **`gamespeek.exe`**
-
----
-
-## 💬 Присоединяйтесь к сообществу
-
-Обсуждайте проект, задавайте вопросы и делитесь опытом в нашем Discord:
-
-➡️ **[Присоединиться к Discord](https://discord.gg/PMZsfrCnre)**
-
----
-
-## 💝 Поддержать проект
-
-Если программа вам полезна, вы можете поддержать развитие проекта:
-
-➡️ **[Поддержать автора](https://dalink.to/wolfgunt)**
-
-Спасибо за вашу поддержку! ❤️
-
----
-
-## 🖥️ Desktop-приложение (Windows)
-
-Портативная сборка GamesPeek — **без установки**, всё внутри архива.
-
-### Что внутри архива
-
-- `gamespeek.exe` — маленький загрузчик (открывает окно с логами)
-- `venv/` — встроенное Python-окружение со всеми зависимостями
-- `PostgreSQL/` — встроенный PostgreSQL 18
-- `database.dump` — полный дамп базы (~80 000+ игр, схема + данные)
-- `staticfiles/` — собранная статика
-- `run.py`, `igdb_site/`, `games/` — Django-проект
-- `.env` — конфигурация (доступы к БД, API-ключи)
-
-### Первый запуск
-
-При первом запуске GamesPeek:
-
-1. Инициализирует локальный PostgreSQL в `%APPDATA%\IGDB_Site_PostgreSQL`
-2. Восстанавливает `database.dump` (~80 000+ игр)
-3. Запускает локальный сервер на **http://127.0.0.1:8000** и открывает его в браузере
-
-Первый запуск занимает **1–2 минуты** (восстановление базы). Последующие — быстрые.
-
-### Примечания
-
-- Redis не нужен — используется Django `LocMemCache`
-- Чтобы сбросить локальную БД, закройте приложение и удалите `%APPDATA%\IGDB_Site_PostgreSQL`
-- Архив самодостаточный, ничего не устанавливается в систему
+**Только исходный код.** Публичного сайта и десктоп-сборки пока нет — проект в активной разработке. Этот README описывает текущий код и способ запуска локально.
 
 ---
 
 ## 🎯 Как это работает
 
-GamesPeek решает простую проблему: **вы знаете, какие игры вам нравятся, но не знаете, во что играть дальше.**
+MovieDB — веб-приложение на Django для поиска фильмов и сериалов. Источник данных — **TMDB**: названия, жанры, ключевые слова, темы, рейтинги и другие метаданные.
 
-Вместо бесконечного листания магазинов и чтения обзоров:
+Идея простая: вы знаете, что вам нравится, и хотите найти, что посмотреть дальше.
 
-1. **Найдите игру**, которая вам нравится (поиск, фильтры)
-2. **Нажмите «Find Similar»** на карточке или странице игры
-3. **Получите ранжированные рекомендации** — от самых похожих к менее похожим
-
-### Примеры рекомендаций
-
-| Исходная игра | Похожие игры |
-|---------------|--------------|
-| The Witcher 3 | Kingdom Come Deliverance, Skyrim, Dragon Age Inquisition |
-| Dark Souls | Elden Ring, Sekiro, Bloodborne, Nioh |
-| Stardew Valley | Animal Crossing, My Time at Portia, Coral Island |
-| Hollow Knight | Ori, Dead Cells, Blasphemous |
-
-### Два способа поиска
-
-| Способ | Что происходит |
-|--------|----------------|
-| **Похожесть в один клик** | Выбираете игру, жмёте «Find Similar» — получаете ранжированные рекомендации |
-| **Ручные критерии** | Строите свой поиск по жанрам, ключевым словам, темам, платформам, году выхода, режимам и движкам |
+1. **Найдите** фильм или сериал через поиск или каталог
+2. **Откройте карточку** с описанием и метаданными
+3. **Получите похожие тайтлы**, ранжированные по жанрам, ключевым словам, темам и другим атрибутам TMDB
+4. **Сравните** два тайтла бок о бок
 
 ---
 
 ## 🔍 Возможности
 
-- **База 80 000+ игр** — PC, PlayStation, Xbox, Nintendo Switch, мобильные
-- **Полное покрытие жанров RPG и стратегий** — все игры этих жанров уже в базе
-- **Умный алгоритм похожести** — анализирует жанры, ключевые слова, темы и другое
-- **Продвинутые фильтры** — по жанру, платформе, теме, ключевому слову, разработчику, режиму, движку и году выхода
-- **Сравнение игр бок о бок** — рейтинги, особенности, характеристики
-- **Подробная информация об играх** — описания, скриншоты, рейтинги
-- **Адаптивный дизайн** — удобно с любого устройства
-- **Портативное Windows-приложение** — запуск локально без установки
+- **Каталог фильмов и сериалов** на данных TMDB
+- **Поиск** по названиям с фильтрами
+- **Похожие тайтлы** на основе жанров, ключевых слов, тем и других метаданных
+- **Продвинутые фильтры** — жанр, тема, ключевое слово, год выхода, рейтинг и другое
+- **Сравнение двух тайтлов** бок о бок
+- **Подробные страницы** с описанием, слоганом, рейтингами и метаданными
+- **Кэширование** карточек и счётчиков (Redis в production, LocMemCache как fallback)
+- **Django admin** для управления контентом
+- **Форма обратной связи**
 
 ---
 
 ## 🛠️ Технологии
 
-- **Backend:** Django 5.x, PostgreSQL
+- **Backend:** Django 5.2, Python 3.11
+- **База данных:** PostgreSQL (`psycopg2-binary`, `dj-database-url`)
+- **Источник данных:** TMDB API (`TMDB_API_KEY`, `TMDB_API_READ_ACCESS_TOKEN`)
 - **Frontend:** Bootstrap 5, Vanilla JavaScript
-- **Кэш:** Django LocMemCache (desktop-сборка, Redis не требуется)
-- **База:** 80 000+ игр из IGDB API
-- **Desktop:** PyInstaller, встроенный PostgreSQL 18
+- **Кэш:** Redis через `django_redis` (опционально; fallback — LocMemCache)
+- **Статика:** WhiteNoise
+- **WSGI-сервер:** Gunicorn
+- **Контейнеризация:** Docker (`Dockerfile`, `start.sh`, `railway.json`)
+- **Анализ текста:** NLTK, joblib
 
 ---
 
-## ⚙️ Требования
+## 🚀 Быстрый старт (локально)
 
-- **Windows 10/11** (64-bit)
-- **Свободное место:** ~4–5 ГБ (архив + распакованная база)
-- **Оперативная память:** 2 ГБ минимум (4 ГБ рекомендуется)
-- **Браузер** — любой современный (Chrome, Edge, Firefox, Яндекс.Браузер)
+### 1. Клонировать репозиторий
+
+```bash
+git clone https://github.com/AlexeyZam15/moviedb_site.git
+cd moviedb_site
+```
+
+### 2. Создать виртуальное окружение
+
+```bash
+python -m venv venv
+```
+
+Windows:
+
+```powershell
+venv\Scripts\activate
+```
+
+Linux/macOS:
+
+```bash
+source venv/bin/activate
+```
+
+### 3. Установить зависимости
+
+```bash
+pip install -r requirements-base.txt
+```
+
+### 4. Настроить окружение
+
+Создайте файл `.env` в корне проекта и заполните переменные (см. раздел ниже). Минимально нужно:
+
+- `DJANGO_SECRET_KEY`
+- `DJANGO_DEBUG=True`
+- `TMDB_API_KEY`
+- `TMDB_API_READ_ACCESS_TOKEN`
+- `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`
+
+### 5. Применить миграции
+
+```bash
+python manage.py migrate
+```
+
+### 6. Запустить сервер разработки
+
+```bash
+python manage.py runserver
+```
+
+Откройте **http://127.0.0.1:8000**.
 
 ---
 
-## 🐛 Режим отладки
+## 📥 Загрузка данных из TMDB
 
-Если что-то пошло не так, запустите `gamespeek.exe` и посмотрите лог в окне лаунчера. Логи также сохраняются в `logs/`
-рядом с `.exe`:
+Данные TMDB загружаются management-командами в `movies/management/commands/`:
 
-- `logs/gamespeek_*.log` — общий лог лаунчера
-- `logs/postgresql_*.log` — лог PostgreSQL
+- `load_tmdb` — пайплайн загрузки из TMDB (API-клиент, сборщик, загрузчик, offset-менеджер, кэш)
+- `load_movies` — загрузка фильмов и сериалов из TMDB
+- `full_pipeline` — сквозной пайплайн обработки
+
+Запуск команды:
+
+```bash
+python manage.py <имя_команды>
+```
+
+Посмотреть доступные опции:
+
+```bash
+python manage.py <имя_команды> --help
+```
+
+Перед загрузкой нужен действующий `TMDB_API_KEY` / `TMDB_API_READ_ACCESS_TOKEN` в `.env`.
+
+---
+
+## ⚙️ Переменные окружения
+
+Конфигурация читается из `.env` (через `python-dotenv`). Имена переменных, которые использует код:
+
+| Переменная | Назначение |
+|------------|------------|
+| `DJANGO_SECRET_KEY` | Секретный ключ Django |
+| `DJANGO_DEBUG` | `True` / `False` |
+| `ALLOWED_HOSTS` | Разрешённые хосты через запятую |
+| `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` | Подключение к PostgreSQL |
+| `DATABASE_URL` | Опциональный полный URL БД (Railway, внешний PostgreSQL) |
+| `TMDB_API_KEY` | API-ключ TMDB |
+| `TMDB_API_READ_ACCESS_TOKEN` | Read access token TMDB |
+| `EMAIL_HOST_PASSWORD` | Пароль SMTP для формы обратной связи |
+| `INDEXNOW_KEY` | Ключ IndexNow для поисковых систем |
+| `VPS_HOST`, `VPS_USER`, `VPS_PATH`, `SSH_PASSWORD` | Хелперы для деплоя на VPS |
+
+---
+
+## 🌐 Развёртывание
+
+В репозитории есть Docker-путь развёртывания:
+
+- `Dockerfile` — образ на Python 3.11 slim с зависимостями
+- `start.sh` — применяет миграции и запускает Gunicorn
+- `railway.json` — билдер и start-команда для Railway
+
+Контейнеру нужен доступный PostgreSQL и корректный `DATABASE_URL` (или переменные `DB_*`). Redis опционален: если он
+недоступен, приложение переходит на Django LocMemCache.
+
+**Важно:** живого деплоя пока нет — эти файлы описывают, как проект можно развернуть, а не работающий сервис.
+
+---
+
+## 🐛 Отладка
+
+- `DJANGO_DEBUG=True` включает Django Debug Toolbar на localhost
+- Медленные запросы логируются кастомными middleware (`SlowRequestLoggerMiddleware`, `TimingMiddleware`)
+- Логи Django пишутся в `logs/django.log`, медленные SQL — в `logs/slow_sql.log`
 
 ---
 
@@ -160,8 +199,7 @@ GamesPeek решает простую проблему: **вы знаете, к�
 
 ## 📄 Лицензия
 
-Проект распространяется под лицензией MIT. Это означает свободное использование, модификацию и распространение с
-указанием авторства.
+Проект распространяется под лицензией MIT. Свободное использование, модификация и распространение с указанием авторства.
 
 ---
 
@@ -169,12 +207,23 @@ GamesPeek решает простую проблему: **вы знаете, к�
 
 - **Django** — веб-фреймворк
 - **PostgreSQL** — база данных
-- **IGDB API** — источник данных об играх
-- **PyInstaller** — сборка EXE
+- **TMDB API** — источник данных о фильмах и сериалах
 - **Bootstrap 5** — фронтенд
-- **Django LocMemCache** — кэш в desktop-сборке
+- **Redis / django_redis** — опциональный кэш
+- **WhiteNoise** — статика
+- **Gunicorn** — WSGI-сервер
 
-*GamesPeek не аффилирован с IGDB или Twitch и не одобрен ими.*
+*MovieDB использует TMDB API, но не аффилирован с TMDB и не одобрен ими.*
+
+---
+
+## 💝 Поддержать проект
+
+Если MovieDB вам полезен, вы можете поддержать развитие проекта:
+
+➡️ **[Поддержать автора](https://dalink.to/wolfgunt)**
+
+Спасибо за вашу поддержку! ❤️
 
 ---
 
@@ -182,6 +231,6 @@ GamesPeek решает простую проблему: **вы знаете, к�
 
 - **Email:** gamespeek@mail.ru
 - **Discord:** [Присоединиться к серверу](https://discord.gg/PMZsfrCnre)
-- **GitHub:** [AlexeyZam15/GamesPeek_site](https://github.com/AlexeyZam15/GamesPeek_site)
+- **GitHub:** [AlexeyZam15/moviedb_site](https://github.com/AlexeyZam15/moviedb_site)
 
 ---
